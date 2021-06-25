@@ -1,0 +1,52 @@
+name: libhs
+version: 0.4.0
+maintainer: Philipp Dargel <chisui.pd@gmail.com>
+license: MIT
+
+ghc-options: -Wall
+
+dependencies:
+- base
+- ghc-prim
+- template-haskell
+- deepseq
+- hashable
+- haskell-src-meta
+
+library:
+  source-dirs: src
+  ghc-options: -Werror
+  exposed-modules:
+  - Std.Literal
+  - Std.Debug
+  - Std.Partial
+  default-extensions:
+  - NoImplicitPrelude
+  - NoStarIsType
+  # imports
+  - ImportQualifiedPost
+  - PackageImports
+  # syntax
+  - ScopedTypeVariables
+  - TypeApplications
+  - LambdaCase
+  - InstanceSigs
+  # deriving
+  - StandaloneDeriving
+  - DeriveGeneric
+  - DerivingVia
+  # type stuff
+  - TypeOperators
+  - TypeFamilies
+  - PolyKinds
+  - ConstraintKinds
+  - DataKinds
+  - MultiParamTypeClasses
+  - TypeSynonymInstances
+  - FlexibleInstances
+  - FlexibleContexts
+  - FunctionalDependencies
+  - QuantifiedConstraints
+  - RankNTypes
+  - GADTs
+
