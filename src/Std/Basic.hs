@@ -2,6 +2,8 @@
 module Std.Basic
     ( Basic(..), Basic1(..)
     , Unsafe(..), Unsafe1(..)
+    , Monoidal(..)
+    , Numeric(..), PartialNumeric(..)
     , errorToPartial0
     , errorToPartial1
     , errorToPartial2
@@ -27,6 +29,9 @@ newtype Basic a = Basic a
 newtype Basic1 f a = Basic1 (f a)
 newtype Unsafe a = Unsafe a
 newtype Unsafe1 a = Unsafe1 a
+newtype Monoidal a = Monoidal a
+newtype Numeric a = Numeric a
+newtype PartialNumeric a = PartialNumeric a
 
 errorToPartial0 :: forall a. a -> Res 'Partial a
 errorToPartial0 x = coerce (toRes (unsafePerformIO (try (evaluate x))))
