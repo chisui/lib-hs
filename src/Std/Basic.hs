@@ -8,11 +8,11 @@ module Std.Basic
     , errorToPartial1
     , errorToPartial2
     , errorToPartial3
+    , liftTotal2
     , Coercible, coerce
     ) where
 
 import "base" Data.Either ( Either(..) )
-import "base" Data.Maybe ( Maybe(..) )
 import "base" GHC.IO.Unsafe ( unsafePerformIO )
 import "base" Data.Coerce ( coerce, Coercible )
 import "base" Control.Exception ( SomeException, try, evaluate )
@@ -34,14 +34,18 @@ newtype Numeric a = Numeric a
 newtype PartialNumeric a = PartialNumeric a
 
 errorToPartial0 :: forall a. a -> Res 'Partial a
-errorToPartial0 x = coerce (toRes (unsafePerformIO (try (evaluate x))))
+errorToPartial0 x = toRes' (unsafePerformIO (try (evaluate x)))
   where
-    toRes :: Either SomeException a -> Maybe a
-    toRes (Left _)  = Nothing
-    toRes (Right r) = Just r
+    toRes' :: Either SomeException a -> Res 'Partial a
+    toRes' (Left _)  = EmptyRes
+    toRes' (Right r) = pure r
 
 errorToPartial1 :: forall f a b. Coercible f (a -> b) => f -> a -> Res 'Partial b
 errorToPartial1 f a = errorToPartial0 ((coerce f :: a -> b) a)
+
+
+liftTotal2 :: forall f a b c. Coercible f (a -> b -> c) => f -> a -> b -> Res 'Total c
+liftTotal2 f a b = pure ((coerce f :: a -> b -> c) a b)
 
 errorToPartial2 :: forall f a b c. Coercible f (a -> b -> c) => f -> a -> b -> Res 'Partial c
 errorToPartial2 f a b = errorToPartial0 ((coerce f :: a -> b -> c) a b)

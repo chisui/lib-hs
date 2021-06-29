@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DerivingVia #-}
@@ -8,8 +9,7 @@ module Std.Partial where
 
 import "base" GHC.Generics ( Generic )
 import "base" Data.Kind ( Type )
-import "base" Data.Coerce ( coerce )
-import "base" Data.Maybe ( Maybe, fromMaybe )
+import "base" Data.Maybe ( Maybe, maybe )
 
 import "this" Std.Cat
 import "this" Std.Debug
@@ -20,60 +20,76 @@ data Totallity
     | Total
   deriving (Show, Generic)
 
-class Monad (Res t) => FromRes t where
-    data family Res (t :: Totallity) (a :: Type)
-    fromRes :: a -> Res t a -> a
+data Res (t :: Totallity) (a :: Type) where
+    FullRes :: a -> Res t a
+    EmptyRes :: Res 'Partial a
 
-instance FromRes 'Total where
-    newtype instance Res 'Total a = TotalRes a
-      deriving stock (Show, Generic)
-      deriving (Functor, Pure, Ap, Lift2, Bind, Join, Applicative, Monad) via Identity
-    fromRes _ = coerce
+instance CatFunctor HASK HASK (Res t) where
+    map f (FullRes a) = FullRes (f a)
+    map _ EmptyRes = EmptyRes
+instance CatPure HASK (Res t) where
+    pure = FullRes
+instance CatAp HASK (Res t) where
+    FullRes f <*> FullRes a = FullRes (f a)
+    EmptyRes <*> _ = EmptyRes
+    _ <*> EmptyRes = EmptyRes
+instance CatLift2 HASK (Res t) where
+    lift2 f (FullRes a) (FullRes b) = pure (f a b)
+    lift2 _ EmptyRes _ = EmptyRes
+    lift2 _ _ EmptyRes = EmptyRes
+instance CatBind HASK (Res t) where
+    (=<<) f (FullRes a) = f a
+    (=<<) _ EmptyRes = EmptyRes
+instance CatJoin HASK (Res t) where
+    join (FullRes r) = r
+    join EmptyRes = EmptyRes
+
+
+instance CatApplicative HASK (Res t)
+instance CatMonad HASK (Res t)
+
+fromRes :: a -> Res t a -> a
+fromRes _ (FullRes a) = a
+fromRes a _ = a
+
+toRes :: Maybe a -> Res 'Partial a
+toRes = maybe EmptyRes FullRes
 
 total :: Res 'Total a -> a
-total = coerce
+total (FullRes a) = a
 
-instance FromRes 'Partial where
-    newtype instance Res 'Partial a = PartialRes (Maybe a)
-      deriving stock (Show, Generic)
-      deriving newtype (Functor, Pure, Ap, Lift2, Bind, Join, Applicative, Monad)
-    fromRes :: forall a. a -> Res 'Partial a -> a
-    fromRes = coerce (fromMaybe @a)
+total2 :: (a -> b -> Res 'Total c) -> a -> b -> c
+total2 f a b = total (f a b)
 
 type family Min (t0 :: Totallity) (t1 :: Totallity) :: Totallity where
     Min 'Total 'Total = 'Total
     Min a b = 'Partial
 
-class (FromRes t0, FromRes t1) => ZipRes t0 t1 where
-    joinRes :: Res t0 (Res t1 a) -> Res (t0 `Min` t1) a
-    zipRes :: (a -> b -> c) -> Res t0 a -> Res t1 b -> Res (t0 `Min` t1) c
+joinRes :: Res t0 (Res t1 a) -> Res (t0 `Min` t1) a
+joinRes (FullRes (FullRes a)) = FullRes a
+joinRes (FullRes EmptyRes) = EmptyRes
+joinRes EmptyRes = EmptyRes
 
-instance ZipRes 'Total 'Total where
-    joinRes = coerce
-    zipRes = coerce
+zipRes :: (a -> b -> c) -> Res t0 a -> Res t1 b -> Res (t0 `Min` t1) c
+zipRes f (FullRes a) (FullRes b) = pure (f a b)
+zipRes _ EmptyRes _ = EmptyRes
+zipRes _ _ EmptyRes = EmptyRes
 
-instance ZipRes 'Total 'Partial where
-    joinRes = coerce
-    zipRes f a = map (f (coerce a))
-
-instance ZipRes 'Partial 'Total where
-    joinRes = coerce
-    zipRes f a b = map (\ a' -> f a' (coerce b)) a
-
-instance ZipRes 'Partial 'Partial where
-    joinRes = join
-    zipRes :: forall a b c. (a -> b -> c) -> Res 'Partial a -> Res 'Partial b -> Res ('Partial `Min` 'Partial) c
-    zipRes = coerce (lift2 :: (a -> b -> c) -> Maybe a -> Maybe b -> Maybe c)
-
-zipRes3 :: (ZipRes t0 t1, ZipRes (t0 `Min` t1) t2) => (a -> b -> c -> d) -> Res t0 a -> Res t1 b -> Res t2 c -> Res (t0 `Min` t1 `Min` t2) d
+zipRes3 :: (a -> b -> c -> d) -> Res t0 a -> Res t1 b -> Res t2 c -> Res (t0 `Min` t1 `Min` t2) d
 zipRes3 f a b = zipRes (\f' x -> f' x) (zipRes f a b)
 
-zipRes4 :: (ZipRes t0 t1, ZipRes (t0 `Min` t1) t2, ZipRes (t0 `Min` t1 `Min` t2) t3) => (a -> b -> c -> d -> e) -> Res t0 a -> Res t1 b -> Res t2 c -> Res t3 d-> Res (t0 `Min` t1 `Min` t2 `Min` t3) e
+zipRes4 :: (a -> b -> c -> d -> e) -> Res t0 a -> Res t1 b -> Res t2 c -> Res t3 d-> Res (t0 `Min` t1 `Min` t2 `Min` t3) e
 zipRes4 f a b c = zipRes (\f' x -> f' x) (zipRes3 f a b c)
 
 
-(.?) :: (ZipRes t0 t1) => (b -> Res t1 c) -> (a -> Res t0 b) -> a -> Res (t0 `Min` t1) c
-(.?) f g a = joinRes (f <$> g a)
+(.?) :: (b -> Res t1 c) -> (a -> Res t0 b) -> a -> Res (t0 `Min` t1) c
+(.?) f g a = f =<<? g a
+
+(=<<?) :: (a -> Res t1 b) -> Res t0 a -> Res (t0 `Min` t1) b
+(=<<?) f = joinRes . map f
+
+(?>>=) :: Res t0 a -> (a -> Res t1 b) -> Res (t0 `Min` t1) b
+(?>>=) = flip (=<<?)
 
 type (-!>) a b = a -> Res 'Total b
 type (-?>) a b = a -> Res 'Partial b

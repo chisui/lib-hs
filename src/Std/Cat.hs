@@ -17,7 +17,7 @@ module Std.Cat
     , Semigroupoid(..)
     , CatId(..)
     , Category
-    , Closed(..)
+    , Closed(..), flip
     , CatDistributive(..), Distributive
     , Iso(..), type (<->), type (<~>)
     , Dual(..), type (<--), type (<~)

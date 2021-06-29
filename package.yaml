@@ -18,6 +18,8 @@ library:
   ghc-options: -Werror
   exposed-modules:
   - Std.Literal
+  - Std.Group
+  - Std.Bool
   - Std.Debug
   - Std.Partial
   default-extensions:

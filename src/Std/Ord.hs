@@ -8,25 +8,26 @@ import "base" GHC.Generics
 import "base" Prelude qualified as Base
 import "base" Data.Bool ( Bool(..), not, (||) )
 import "base" Data.Ord ( Ordering(..) )
+
 import "this" Std.Partial
 import "this" Std.Cat
 import "this" Std.Basic
 import "this" Std.Generic
 
 
-class FromRes t => Eq (t :: Totallity) a | a -> t where
+class Eq (t :: Totallity) a | a -> t where
     (==?), (/=?) :: a -> a -> Res t Bool
     {-# MINIMAL (==?) | (/=?) #-}
     a ==? b = not <$> (a /=? b)
     a /=? b = not <$> (a ==? b)
 
 (==), (/=) :: forall a. Eq 'Total a => a -> a -> Bool
-(==) = coerce ((==?) @'Total @a)
-(/=) = coerce ((/=?) @'Total @a)
+a == b = total (a ==? b)
+a /= b = total (a /=? b)
 
 instance Base.Eq a => Eq 'Total (Basic a) where
-    (==?) = coerce ((Base.==) @a)
-    (/=?) = coerce ((Base./=) @a)
+    (==?) = liftTotal2 ((Base.==) @a)
+    (/=?) = liftTotal2 ((Base./=) @a)
 instance Base.Eq a => Eq 'Partial (Unsafe a) where
     (==?) = errorToPartial2 ((Base.==) @a)
     (/=?) = errorToPartial2 ((Base./=) @a)
@@ -61,10 +62,10 @@ class Eq t a => Ord (t :: Totallity) a | a -> t where
                   -- can be defined for an instance of Ord:
                   else map (\ a -> if a then LT else GT) (x <=? y)
 
-    x <?  y = total . (==? LT) <$> compare' x y
-    x <=? y = total . (/=? GT) <$> compare' x y
-    x >?  y = total . (==? GT) <$> compare' x y
-    x >=? y = total . (/=? LT) <$> compare' x y
+    x <?  y = (== LT) <$> compare' x y
+    x <=? y = (/= GT) <$> compare' x y
+    x >?  y = (== GT) <$> compare' x y
+    x >=? y = (/= LT) <$> compare' x y
 
         -- These two default methods use '<=' rather than 'compare'
         -- because the latter is often more expensive
@@ -75,22 +76,22 @@ class Eq t a => Ord (t :: Totallity) a | a -> t where
 compare              :: forall a. Ord 'Total a => a -> a -> Ordering
 (<), (<=), (>), (>=) :: forall a. Ord 'Total a => a -> a -> Bool
 max, min             :: forall a. Ord 'Total a => a -> a -> a
-compare = coerce (compare' :: a -> a -> Res 'Total Ordering)
-(<)  = coerce ((<?)  :: a -> a -> Res 'Total Bool)
-(<=) = coerce ((<=?) :: a -> a -> Res 'Total Bool)
-(>)  = coerce ((>?)  :: a -> a -> Res 'Total Bool)
-(>=) = coerce ((>=?) :: a -> a -> Res 'Total Bool)
-max  = coerce (max' :: a -> a -> Res 'Total a)
-min  = coerce (min' :: a -> a -> Res 'Total a)
+compare = total2 compare'
+(<)  = total2 (<?) 
+(<=) = total2 (<=?)
+(>)  = total2 (>?) 
+(>=) = total2 (>=?)
+max  = total2 max'
+min  = total2 min'
 
 instance Base.Ord a => Ord 'Total (Basic a) where
-    compare' = coerce (Base.compare @a)
-    (<?)  = coerce ((Base.<)  @a)
-    (<=?) = coerce ((Base.<=) @a)
-    (>?)  = coerce ((Base.>)  @a)
-    (>=?) = coerce ((Base.>=) @a)
-    max'  = coerce (Base.max @a)
-    min'  = coerce (Base.min @a)
+    compare' = liftTotal2 (Base.compare @a)
+    (<?)  = liftTotal2 ((Base.<)  @a)
+    (<=?) = liftTotal2 ((Base.<=) @a)
+    (>?)  = liftTotal2 ((Base.>)  @a)
+    (>=?) = liftTotal2 ((Base.>=) @a)
+    max'  = liftTotal2 (Base.max @a)
+    min'  = liftTotal2 (Base.min @a)
 instance Base.Ord a => Ord 'Partial (Unsafe a) where
     compare' = errorToPartial2 (Base.compare @a)
     (<?)  = errorToPartial2 ((Base.<)  @a)
@@ -109,9 +110,7 @@ instance Ord 'Total a => Base.Ord (Basic a) where
     min  = coerce (min @a)
 
 
-deriving via (Basic Bool) instance Eq 'Total Bool
-deriving via (Basic Bool) instance Ord 'Total Bool
-deriving via (Basic Ordering) instance Eq 'Total Ordering 
-deriving via (Basic Ordering) instance Ord 'Total Ordering 
+deriving via (Basic Ordering) instance Eq 'Total Ordering
+deriving via (Basic Ordering) instance Ord 'Total Ordering
 deriving via (Basic Base.Int) instance Eq 'Total Base.Int
 deriving via (Basic Base.Int) instance Ord 'Total Base.Int

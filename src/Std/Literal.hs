@@ -16,10 +16,10 @@ import "base" Prelude qualified as Base
 import "base" Data.String qualified as Base
 import "base" GHC.Exts qualified as Base
 import "base" Prelude ( Int, Integer, String )
-import "base" Data.Coerce
 
 import "this" Std.Partial
 import "this" Std.Basic
+import "this" Std.Cat
 
 
 class FromInteger t a | a -> t where
@@ -67,7 +67,8 @@ class MinBound a where
 class MaxBound a where
     maxBound :: a
 
-type Bounded a = (MinBound a, MaxBound a)
+class (MinBound a, MaxBound a) => Bounded a
+instance (MinBound a, MaxBound a) => Bounded a
 
 class Pred t a | a -> t where
     pred :: a -> Res t a
@@ -79,20 +80,20 @@ class Succ t a | a -> t where
 
 
 instance Base.Num a => FromInteger 'Total (Basic a) where
-    fromInteger = coerce @(Base.Integer -> a) Base.fromInteger
+    fromInteger = pure . coerce (Base.fromInteger :: Integer -> a)
 
 instance Base.Integral a => ToInteger 'Total (Basic a) where
-    toInteger = coerce @(a -> Base.Integer) Base.toInteger
+    toInteger = pure . coerce (Base.toInteger :: a -> Integer)
 
 instance Base.IsString a => FromString 'Total (Basic a) where
-    fromString = coerce @(Base.String -> a) Base.fromString
+    fromString = pure . coerce (Base.fromString :: String -> a)
 
 instance Base.Enum a => FromInt 'Total (Basic a) where
-    fromInt = coerce @(Base.Int -> a) Base.toEnum
+    fromInt = pure . coerce (Base.toEnum :: Int -> a)
 instance Base.Enum a => Pred 'Total (Basic a) where
-    pred = coerce @(a -> a) Base.pred
+    pred = pure . coerce (Base.pred :: a -> a)
 instance Base.Enum a => Succ 'Total (Basic a) where
-    succ = coerce @(a -> a) Base.succ
+    succ = pure . coerce (Base.succ :: a -> a)
 
 instance Base.Bounded a => MinBound (Basic a) where
     minBound = coerce @a Base.minBound
@@ -121,14 +122,14 @@ instance Base.Enum a => Succ 'Partial (Unsafe a) where
 instance Base.IsList l => HasItems (Basic l) where
     type Item (Basic l) = Base.Item l
 instance Base.IsList l => FromList 'Total (Basic l) where
-    fromList = coerce (Base.fromList @l)
+    fromList = pure . coerce (Base.fromList @l)
 instance Base.IsList l => ToList 'Total (Basic l) where
-    toList = coerce (Base.toList @l)
+    toList = pure . coerce (Base.toList @l)
 
 instance IsList l => Base.IsList (Basic l) where
     type Item (Basic l) = Item l
-    fromList = coerce (Std.Literal.fromList @_ @l)
-    toList = coerce (Std.Literal.toList @'Total @l)
+    fromList = total . coerce (Std.Literal.fromList @_ @l)
+    toList = total . coerce (Std.Literal.toList @'Total @l)
 
 instance Base.IsList l => HasItems (Unsafe l) where
     type Item (Unsafe l) = Base.Item l
