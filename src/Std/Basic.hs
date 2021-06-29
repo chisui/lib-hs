@@ -4,11 +4,10 @@ module Std.Basic
     , Unsafe(..), Unsafe1(..)
     , Monoidal(..)
     , Numeric(..), PartialNumeric(..)
-    , errorToPartial0
-    , errorToPartial1
-    , errorToPartial2
-    , errorToPartial3
-    , liftTotal2
+    , errorToPartial0, liftTotal0
+    , errorToPartial1, liftTotal1
+    , errorToPartial2, liftTotal2
+    , errorToPartial3, liftTotal3
     , Coercible, coerce
     ) where
 
@@ -25,12 +24,12 @@ import "this" Std.Partial
 import "this" Std.Cat
 
 
-newtype Basic a = Basic a
-newtype Basic1 f a = Basic1 (f a)
-newtype Unsafe a = Unsafe a
-newtype Unsafe1 a = Unsafe1 a
-newtype Monoidal a = Monoidal a
-newtype Numeric a = Numeric a
+newtype Basic          a = Basic a
+newtype Basic1       f a = Basic1 (f a)
+newtype Unsafe         a = Unsafe a
+newtype Unsafe1        a = Unsafe1 a
+newtype Monoidal       a = Monoidal a
+newtype Numeric        a = Numeric a
 newtype PartialNumeric a = PartialNumeric a
 
 errorToPartial0 :: forall a. a -> Res 'Partial a
@@ -43,15 +42,24 @@ errorToPartial0 x = toRes' (unsafePerformIO (try (evaluate x)))
 errorToPartial1 :: forall f a b. Coercible f (a -> b) => f -> a -> Res 'Partial b
 errorToPartial1 f a = errorToPartial0 ((coerce f :: a -> b) a)
 
-
-liftTotal2 :: forall f a b c. Coercible f (a -> b -> c) => f -> a -> b -> Res 'Total c
-liftTotal2 f a b = pure ((coerce f :: a -> b -> c) a b)
-
 errorToPartial2 :: forall f a b c. Coercible f (a -> b -> c) => f -> a -> b -> Res 'Partial c
 errorToPartial2 f a b = errorToPartial0 ((coerce f :: a -> b -> c) a b)
 
 errorToPartial3 :: forall f a b c d. Coercible f (a -> b -> c -> d) => f -> a -> b -> c -> Res 'Partial d
 errorToPartial3 f a b c = errorToPartial0 ((coerce f :: a -> b -> c -> d) a b c)
+
+
+liftTotal0 :: a -> Res 'Partial a
+liftTotal0 = pure
+
+liftTotal1 :: forall f a b. Coercible f (a -> b) => f -> a -> Res 'Total b
+liftTotal1 f a = pure ((coerce f :: a -> b) a)
+
+liftTotal2 :: forall f a b c. Coercible f (a -> b -> c) => f -> a -> b -> Res 'Total c
+liftTotal2 f a b = pure ((coerce f :: a -> b -> c) a b)
+
+liftTotal3 :: forall f a b c d. Coercible f (a -> b -> c -> d) => f -> a -> b -> c -> Res 'Total d
+liftTotal3 f a b c = pure ((coerce f :: a -> b -> c -> d) a b c)
 
 -- instances
 

@@ -73,9 +73,9 @@ class Eq t a => Ord (t :: Totallity) a | a -> t where
     min' x y = (\b -> if b then y else x) <$> (x <=? y)
     {-# MINIMAL compare' | (<=?) #-}
 
-compare              :: forall a. Ord 'Total a => a -> a -> Ordering
-(<), (<=), (>), (>=) :: forall a. Ord 'Total a => a -> a -> Bool
-max, min             :: forall a. Ord 'Total a => a -> a -> a
+compare              :: Ord 'Total a => a -> a -> Ordering
+(<), (<=), (>), (>=) :: Ord 'Total a => a -> a -> Bool
+max, min             :: Ord 'Total a => a -> a -> a
 compare = total2 compare'
 (<)  = total2 (<?) 
 (<=) = total2 (<=?)
@@ -110,7 +110,7 @@ instance Ord 'Total a => Base.Ord (Basic a) where
     min  = coerce (min @a)
 
 
-deriving via (Basic Ordering) instance Eq 'Total Ordering
+deriving via (Basic Ordering) instance Eq  'Total Ordering
 deriving via (Basic Ordering) instance Ord 'Total Ordering
-deriving via (Basic Base.Int) instance Eq 'Total Base.Int
+deriving via (Basic Base.Int) instance Eq  'Total Base.Int
 deriving via (Basic Base.Int) instance Ord 'Total Base.Int

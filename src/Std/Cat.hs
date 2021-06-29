@@ -449,4 +449,3 @@ instance ( CatAssociative cat f
          , CatMonad cat m
          ) => CatBifunctor (CatKleisli cat m) (CatKleisli cat m) (CatKleisli cat m) f where
     bimap f g = left f . right g
-

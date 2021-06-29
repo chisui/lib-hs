@@ -24,6 +24,9 @@ data Res (t :: Totallity) (a :: Type) where
     FullRes :: a -> Res t a
     EmptyRes :: Res 'Partial a
 
+type (-!>) a b = a -> Res 'Total b
+type (-?>) a b = a -> Res 'Partial b
+
 instance CatFunctor HASK HASK (Res t) where
     map f (FullRes a) = FullRes (f a)
     map _ EmptyRes = EmptyRes
@@ -44,9 +47,9 @@ instance CatJoin HASK (Res t) where
     join (FullRes r) = r
     join EmptyRes = EmptyRes
 
-
 instance CatApplicative HASK (Res t)
 instance CatMonad HASK (Res t)
+
 
 fromRes :: a -> Res t a -> a
 fromRes _ (FullRes a) = a
@@ -60,6 +63,7 @@ total (FullRes a) = a
 
 total2 :: (a -> b -> Res 'Total c) -> a -> b -> c
 total2 f a b = total (f a b)
+
 
 type family Min (t0 :: Totallity) (t1 :: Totallity) :: Totallity where
     Min 'Total 'Total = 'Total
@@ -76,10 +80,10 @@ zipRes _ EmptyRes _ = EmptyRes
 zipRes _ _ EmptyRes = EmptyRes
 
 zipRes3 :: (a -> b -> c -> d) -> Res t0 a -> Res t1 b -> Res t2 c -> Res (t0 `Min` t1 `Min` t2) d
-zipRes3 f a b = zipRes (\f' x -> f' x) (zipRes f a b)
+zipRes3 f a = zipRes id . zipRes f a
 
 zipRes4 :: (a -> b -> c -> d -> e) -> Res t0 a -> Res t1 b -> Res t2 c -> Res t3 d-> Res (t0 `Min` t1 `Min` t2 `Min` t3) e
-zipRes4 f a b c = zipRes (\f' x -> f' x) (zipRes3 f a b c)
+zipRes4 f a b = zipRes id . zipRes3 f a b
 
 
 (.?) :: (b -> Res t1 c) -> (a -> Res t0 b) -> a -> Res (t0 `Min` t1) c
@@ -90,6 +94,3 @@ zipRes4 f a b c = zipRes (\f' x -> f' x) (zipRes3 f a b c)
 
 (?>>=) :: Res t0 a -> (a -> Res t1 b) -> Res (t0 `Min` t1) b
 (?>>=) = flip (=<<?)
-
-type (-!>) a b = a -> Res 'Total b
-type (-?>) a b = a -> Res 'Partial b
