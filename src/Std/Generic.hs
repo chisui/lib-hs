@@ -41,15 +41,15 @@ prodRep :: (f :*: g) x <-> (f x, g x)
 prodRep = (\(a :*: b) -> (a, b)) :<-> uncurry (:*:)
 
 sumRep :: (f :+: g) x <-> Either (f x) (g x)
-sumRep = coproductIso L1 R1 $ \case
+sumRep = coproduct L1 R1 $ \case
     L1 a -> Left a
     R1 a -> Right a
 
 k1 :: K1 i a x <-> a
-k1 = coerceIso
+k1 = coerce
 
 m1 :: M1 i m f x <-> f x
-m1 = coerceIso
+m1 = coerce
 
 u1 :: U1 x <-> ()
 u1 = const () :<-> const U1

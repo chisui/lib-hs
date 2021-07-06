@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module Std.Some
     ( Some(..), SomeT(..)
     , use, useT, use2, useT2
@@ -12,6 +13,7 @@ import "base" Data.Typeable
 import "base" Data.Kind
 
 import "this" Std.Debug
+import "this" Std.Literal
 import "this" Std.Cat
 import "this" Std.Ord
 import "this" Std.Group

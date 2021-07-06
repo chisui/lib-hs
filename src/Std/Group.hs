@@ -20,6 +20,8 @@ import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
 import "this" Std.Partial
 import "this" Std.Basic
+import "this" Std.Literal
+import "this" Std.Cat.Iso
 
 
 class BinOp (op :: k) a b | op a -> b where
@@ -92,8 +94,6 @@ class Magma op a => Lower (op :: k) a where
     bot# :: Proxy# op -> a
     
 
-type Bounded op a = (Upper op a, Lower op a)
-
 type Quasigroup = Invertible
 type UnitalMagma = IdentityOp
 type Semigroup = Associative
@@ -131,33 +131,33 @@ type Field f g a =
 -- instances
 
 instance Base.Num a => BinOp 'Add (Numeric a) (Numeric a) where
-    op# _ = coerce ((Base.+) @a)
+    op# _ = to coerce ((Base.+) @a)
 instance Base.Num a => Magma 'Add (Numeric a)
 instance Base.Num a => Associative 'Add (Numeric a)
 
 instance Base.Num a => BinOp 'Sub (Numeric a) (Numeric a) where
-    op# _ = coerce ((Base.-) @a)
+    op# _ = to coerce ((Base.-) @a)
 instance Base.Num a => Magma 'Sub (Numeric a)
 
 instance Base.Num a => BinOp 'Mult (Numeric a) (Numeric a) where
-    op# _ = coerce ((Base.*) @a)
+    op# _ = to coerce ((Base.*) @a)
 instance Base.Num a => Magma 'Mult (Numeric a)
 
 instance Base.Integral a => BinOp 'Div (PartialNumeric a) (Res 'Partial (PartialNumeric a)) where
     op# _ = errorToPartial2 (Base.div @a)
 
 instance Base.Integral a => BinOp 'Mod (Numeric a) (Numeric a) where
-    op# _ = coerce (Base.mod @a)
+    op# _ = to coerce (Base.mod @a)
 
 instance Base.Num a => Invertible 'Add (Numeric a) where
-    inv# _ = coerce (Base.negate @a)
+    inv# _ = to coerce (Base.negate @a)
 instance Base.Num a => IdentityOp 'Add (Numeric a) where
-    identity# _ = coerce (0 :: a)
+    identity# _ = to coerce (0 :: Basic a)
 instance Base.Num a => Commutative 'Add (Numeric a)
 
 instance Base.Num a => Associative 'Mult (Numeric a)
 instance Base.Num a => IdentityOp 'Mult (Numeric a) where
-    identity# _ = coerce (1 :: a)
+    identity# _ = to coerce (1 :: Basic a)
 instance Base.Num a => Commutative 'Mult (Numeric a)
 
 instance Base.Num a => LeftDistributive 'Mult 'Add (Numeric a)
@@ -197,18 +197,18 @@ deriving via (Numeric Base.Integer) instance LeftDistributive 'Mult 'Add Base.In
 deriving via (Numeric Base.Integer) instance RightDistributive 'Mult 'Add Base.Integer
 
 instance Base.Semigroup a => BinOp op (Monoidal a) (Monoidal a) where
-    op# _ = coerce ((Base.<>) :: a -> a -> a)
+    op# _ = to coerce ((Base.<>) :: a -> a -> a)
 instance Base.Semigroup a => Magma op (Monoidal a)
 instance Base.Semigroup a => Associative op (Monoidal a)
 instance Base.Monoid a => IdentityOp op (Monoidal a) where
-    identity# _ = coerce (Base.mempty :: a)
+    identity# _ = to coerce (Base.mempty :: a)
 
 instance Base.Alternative f => BinOp 'Add (Basic1 f a) (Basic1 f a) where
-    op# _ = coerce ((Base.<|>) :: f a -> f a -> f a)
+    op# _ = to coerce ((Base.<|>) :: f a -> f a -> f a)
 instance Base.Alternative f => Magma 'Add (Basic1 f a)
 instance Base.Alternative f => Associative 'Add (Basic1 f a)
 instance Base.Alternative f => IdentityOp 'Add (Basic1 f a) where
-    identity# _ = coerce (Base.empty :: f a)
+    identity# _ = to coerce (Base.empty :: f a)
 
 instance BinOp 'Add [a] [a] where op# _ = (Base.<>)
 deriving via (Basic1 [] a) instance Magma 'Add [a]

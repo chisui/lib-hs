@@ -4,8 +4,6 @@
 {-# LANGUAGE MagicHash #-}
 module Std.HList where
 
-import "base" Data.Coerce
-
 import "this" Std.Bool
 import "this" Std.Type
 import "this" Std.Cat
@@ -23,7 +21,7 @@ newtype HListT (l :: [k]) (f :: k -> Type) = HListT
     }
 
 singletonH :: a <-> HList '[a]
-singletonH = invCat tuple . coerceIso
+singletonH = invCat tuple . coerce
 
 mapToList :: forall c l b proxy. AllImplement l c => proxy c -> (forall a. c a => a -> b) -> HList l -> [b]
 mapToList _ = mapToList# (proxy# @c)
@@ -78,15 +76,16 @@ splitHIso = splitH :<-> uncurry concatH
 
 instance CatFunctor (~>) (->) (HListT '[]) where
     map :: forall f g. f ~> g -> HListT '[] f -> HListT '[] g
-    map _ = coerce :: HListT '[] f -> HListT '[] g
+    map _ = to coerce :: HListT '[] f -> HListT '[] g
 
 instance CatFunctor (~>) (->) (HListT as) => CatFunctor (~>) (->) (HListT (a ': as)) where
     map :: forall f g. f ~> g -> HListT (a ': as) f -> HListT (a ': as) g
-    map f = coerce map' :: HListT (a ': as) f -> HListT (a ': as) g
+    map f = to coerce map' :: HListT (a ': as) f -> HListT (a ': as) g
       where
         map' :: HList (Map f (a ': as)) -> HList (Map g (a ': as))
         map' (a ::: as) = eta f a ::: mapNext as
-        mapNext = coerce @(HListT as f -> HListT as g) @(HList (Map f as) -> HList (Map g as)) (map f)
+        mapNext :: HList (Map f as) -> HList (Map g as)
+        mapNext = to coerce (map f :: HListT as f -> HListT as g)
 
 instance Eq 'Total (HList '[]) where
     _ ==? _ = pure True

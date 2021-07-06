@@ -15,6 +15,7 @@ import "base" Data.Bool ( Bool(..), not, (||), bool, (&&) )
 import "base" Data.Ord ( Ordering(..) )
 
 import "this" Std.Partial
+import "this" Std.IfThenElse
 import "this" Std.Cat
 import "this" Std.Basic
 import "this" Std.Generic
@@ -37,8 +38,8 @@ instance Base.Eq a => Eq 'Partial (Unsafe a) where
     (==?) = errorToPartial2 ((Base.==) @a)
     (/=?) = errorToPartial2 ((Base./=) @a)
 instance Eq 'Total a => Base.Eq (Basic a) where
-    (==) = coerce ((==) @a)
-    (/=) = coerce ((/=) @a)
+    (==) = to coerce ((==) @a)
+    (/=) = to coerce ((/=) @a)
 instance GThrough GEq a => Eq 'Total (Generically a) where
     Generically a ==? Generically b = from rep a `gEq` from rep b
 
@@ -58,11 +59,11 @@ instance GEq U1 where
     _ `gEq` _ = pure True
 
 instance Eq t (f x) => Eq t (M1 i c f x) where
-    (==?) = coerce ((==?) :: f x -> f x -> Res t Bool)
-    (/=?) = coerce ((/=?) :: f x -> f x -> Res t Bool)
+    (==?) = to coerce ((==?) :: f x -> f x -> Res t Bool)
+    (/=?) = to coerce ((/=?) :: f x -> f x -> Res t Bool)
 instance Eq t a => Eq t (K1 i a x) where
-    (==?) = coerce ((==?) :: a -> a -> Res t Bool)
-    (/=?) = coerce ((/=?) :: a -> a -> Res t Bool)
+    (==?) = to coerce ((==?) :: a -> a -> Res t Bool)
+    (/=?) = to coerce ((/=?) :: a -> a -> Res t Bool)
 instance (Eq u (f x), Eq v (g x), t ~ Min u v) => Eq t ((f :+: g) x) where
     L1 a ==? L1 b = joinRes @u @v (pure <$> (a ==? b))
     R1 a ==? R1 b = joinRes @u @v $ pure (a ==? b)
@@ -85,7 +86,7 @@ class Eq t a => Ord (t :: Totallity) a | a -> t where
                   -- NB: must be '<=' not '<' to validate the
                   -- above claim about the minimal things that
                   -- can be defined for an instance of Ord:
-                  else map (\ a -> if a then LT else GT) (x <=? y)
+                  else map (bool LT GT) (x <=? y)
 
     x <?  y = (== LT) <$> compare' x y
     x <=? y = (/= GT) <$> compare' x y
@@ -140,13 +141,13 @@ instance Base.Ord a => Ord 'Partial (Unsafe a) where
     max'  = errorToPartial2 (Base.max @a)
     min'  = errorToPartial2 (Base.min @a)
 instance Ord 'Total a => Base.Ord (Basic a) where
-    compare = coerce (compare @a)
-    (<)  = coerce ((<)  @a)
-    (<=) = coerce ((<=) @a)
-    (>)  = coerce ((>)  @a)
-    (>=) = coerce ((>=) @a)
-    max  = coerce (max @a)
-    min  = coerce (min @a)
+    compare = to coerce (compare @a)
+    (<)  = to coerce ((<)  @a)
+    (<=) = to coerce ((<=) @a)
+    (>)  = to coerce ((>)  @a)
+    (>=) = to coerce ((>=) @a)
+    max  = to coerce (max @a)
+    min  = to coerce (min @a)
 
 
 deriving via (Basic Ordering) instance Eq  'Total Ordering
@@ -166,8 +167,8 @@ instance (Min t t ~ t, Eq t a) => Eq t [a] where
 instance (Min t t ~ t, Ord t a) => Ord t [a] where
     (a : as) `compare'` (b : bs) = zipRes @t @t (Base.<>) (a `compare'` b) (as `compare'` bs)
     [] `compare'` [] = pure EQ
-    [] `compare'` _ = pure LT
-    _ `compare'` _ = pure GT
+    [] `compare'` _  = pure LT
+    _  `compare'` _  = pure GT
 
 instance (Eq u a, Eq v b, t ~ Min u v) => Eq t (Base.Either a b) where
     Base.Left  a ==? Base.Left  b = joinRes @u @v (pure <$> (a ==? b))

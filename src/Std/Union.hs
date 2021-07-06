@@ -27,11 +27,13 @@ import "base" Unsafe.Coerce ( unsafeCoerce )
 import "deepseq" Control.DeepSeq ( NFData(..) )
 import "hashable" Data.Hashable ( Hashable(..) )
 
+import "this" Std.IfThenElse
 import "this" Std.Singleton
 import "this" Std.Cat
 import "this" Std.Group
 import "this" Std.Ord
 import "this" Std.Partial
+import "this" Std.Literal
 import "this" Std.Debug
 import "this" Std.Text
 import "this" Std.Some

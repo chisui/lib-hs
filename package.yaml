@@ -29,6 +29,7 @@ library:
   - ImportQualifiedPost
   - PackageImports
   # syntax
+  - RebindableSyntax
   - ScopedTypeVariables
   - TypeApplications
   - LambdaCase
