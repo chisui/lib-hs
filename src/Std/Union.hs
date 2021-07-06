@@ -1,54 +1,44 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Union
-    ( Union
-    , UnionT
-    , inject, project
+    ( Union , UnionT
+    , singletonU, inject, injectAt, injectAt#, project
     , decompose, decomposeLast
-    , weaken
+    , weaken, splitU, splitUIso
     , mapUnion
-    , mapUnionT
     , type (:<), Element
     , type (:<:), Elements
     , type (:$), ApplyU(..)
-    , applyU2
+    , toSome, applyU2
     ) where
 
 import "base" Prelude ( Int, Either(..), either, Maybe(..), fromIntegral, otherwise )
-import "base" Data.Kind ( Type, Constraint )
 import "base" Data.Maybe ( fromJust )
 import "base" Data.List ( elemIndex )
+import "base" Data.Proxy ( Proxy(..) )
 import "base" Data.Functor ( ($>) )
 import "base" Control.Applicative ( Alternative )
 import "base" Control.Monad( guard )
-import "base" GHC.TypeLits ( Nat, type (+) )
-import "base" GHC.Exts ( Any )
 import "base" Unsafe.Coerce ( unsafeCoerce )
 
 import "deepseq" Control.DeepSeq ( NFData(..) )
 import "hashable" Data.Hashable ( Hashable(..) )
 
-import "this" Std.TypeError
 import "this" Std.Singleton
 import "this" Std.Cat
 import "this" Std.Group
 import "this" Std.Ord
+import "this" Std.Partial
 import "this" Std.Debug
+import "this" Std.Text
+import "this" Std.Some
+import "this" Std.Type
 
 
-type ElemIndex (t :: k) (l :: [k]) = ElemIndex' t l 0 l
-
-type family ElemIndex' (t :: k) (orig :: [k]) (i :: Nat) (l :: [k]) :: Nat where
-    ElemIndex' t orig i (t ': _)  = i
-    ElemIndex' t orig i (_ ': ts) = ElemIndex' t orig (i + 1) ts
-    ElemIndex' t orig _ '[] = [typeError|
-        '$t\' is not a member of the type-level list
-        $orig
-    |]
-
-type Element t l = Known (ElemIndex t l)
+type Element t l = (Known (ElemIndex t l), l ! ElemIndex t l ~ t)
 type (t :< l) = Element t l
 infixr 5 :<
 
@@ -60,26 +50,33 @@ type Elements ts l = Known (ElemIndices ts l)
 type (ts :<: l) = Elements ts l
 infixr 5 :<:
 
-
 data Union (l :: [Type]) where
     InternalUnion :: {-# UNPACK #-} !Int -> a -> Union l
 
-type family MapT (f :: k -> k1) (l :: [k]) :: [k1] where
-    MapT _ '[] = '[]
-    MapT f (a ': as) = f a ': MapT f as
-type UnionT (f :: k -> Type) (l :: [k]) = Union (MapT f l)
+newtype UnionT (l :: [k]) (f :: k -> Type) = UnionT (Union (Map f l))
 
-natV :: forall (n :: Nat). Known n => Int
-natV = fromIntegral (val' @n)
+natV :: forall (n :: Nat). Known n => Proxy# n -> Int
+natV p = fromIntegral (val# p)
+
+singletonU :: a <-> Union '[a]
+singletonU = inject :<-> decomposeLast
 
 -- | Inject a functor into a type-aligned Union.
-inject :: forall a l. (a :< l) => a -> Union l
-inject = InternalUnion (natV @(ElemIndex a l))
+inject :: forall l a. (a :< l) => a -> Union l
+inject = injectAt# (proxy# @(ElemIndex a l))
 {-# INLINE inject #-}
+
+injectAt :: forall n l proxy. Known n => proxy n -> l ! n -> Union l
+injectAt _ = injectAt# (proxy# @n)
+{-# INLINE injectAt #-}
+
+injectAt# :: forall n l. Known n => Proxy# n -> l ! n -> Union l
+injectAt# p = InternalUnion (natV p)
+{-# INLINE injectAt# #-}
 
 -- | Maybe project a functor out of a type-aligned Union.
 project :: forall a l m. (Alternative m, a :< l) => Union l -> m a
-project (InternalUnion n' x) = guard (natV @(ElemIndex a l) == n') $> unsafeCoerce x
+project (InternalUnion n' x) = guard (natV (proxy# @(ElemIndex a l)) == n') $> unsafeCoerce x
 {-# INLINE project #-}
 
 
@@ -103,57 +100,90 @@ decomposeOffset !i (InternalUnion n v)
 -- return @e@
 decomposeLast :: HasCallStack => Union '[a] -> a
 decomposeLast (InternalUnion 0 v) = unsafeCoerce v
-decomposeLast (InternalUnion n _) = [error| malformed union: unions of exactly one type have to have the index 0 but got $n |]
+decomposeLast (InternalUnion n _) = error [fmt| malformed union: unions of exactly one type have to have the index 0 but got $n |]
 {-# INLINE decomposeLast #-}
 
 weaken :: forall a b. (a :<: b) => Union a -> Union b
 weaken (InternalUnion n a) = InternalUnion n' a
   where n' = fromJust . elemIndex n . map fromIntegral $ val' @(ElemIndices a b)
 
-mapUnion :: (forall a. a -> f a) -> Union l -> UnionT f l
-mapUnion f (InternalUnion n v) = InternalUnion n (f a)
+splitU :: forall a b proxy. Known (Length a) => proxy '(a, b) -> Union (Concat a b) -> Either (Union a) (Union b)
+splitU _ (InternalUnion n a)
+    = let l = natV (proxy# @(Length a))
+    in if n >= l
+        then Left (InternalUnion (n - l) a)
+        else Right (InternalUnion n a)
+
+splitUIso :: forall a b. Known (Length a) => Union (Concat a b) <-> Either (Union a) (Union b)
+splitUIso = splitU (Proxy @'(a, b)) :<-> from'
+  where
+    from' (Left u) = unsafeCoerce u -- left doesn't need offset
+    from' (Right (InternalUnion n a)) = InternalUnion (n + natV (proxy# @(Length a))) a
+
+mapUnion :: (forall a. a -> f a) -> Union l -> UnionT l f
+mapUnion f (InternalUnion n v) = UnionT (InternalUnion n (f a))
   where a = unsafeCoerce v :: Any -- can be done since the function can not touch a anyways.
-
-mapUnionT :: (forall a. f a -> g a) -> UnionT f l -> UnionT g l
-mapUnionT f (InternalUnion n v) = InternalUnion n (f a)
-  where a = unsafeCoerce v :: f Any -- can be done since the function can not touch a anyways.
-
 
 type (:$) = ApplyU
 
 class ApplyU (c :: Type -> Constraint) (fs :: [Type]) where
-    applyU :: (forall a. c a => a -> b) -> Union fs -> b
+    applyU :: proxy c -> (forall a. c a => a -> b) -> Union fs -> b
+    applyU _ = applyU# (proxy# @c)
+    applyU# :: Proxy# c -> (forall a. c a => a -> b) -> Union fs -> b
 
 instance ApplyU' c 0 a as => ApplyU c (a ': as) where
-    applyU = applyU' @c @0 @a @as
+    applyU# _ = applyU' (proxy# @'(c, 0, a, as))
 
 class ApplyU' (c :: Type -> Constraint) (n :: Nat) (a :: Type) (as :: [Type]) where
-    applyU' :: (forall x. c x => x -> b) -> Union (a ': as) -> b
+    applyU' :: Proxy# '(c, n, a, as) -> (forall x. c x => x -> b) -> Union (a ': as) -> b
 
 instance (Known n, c a, ApplyU' c (n + 1) a (b ': as)) => ApplyU' c n a (b ': as) where
-    applyU' f u = either next f . decomposeOffset (natV @n) $ u
-      where next _ = applyU' @c @(n + 1) @a @(b ': as) f u
+    applyU' _ f u = either next f . decomposeOffset (natV (proxy# @n)) $ u
+      where next _ = applyU' (proxy# @'(c, n + 1, a, b ': as)) f u
     {-# INLINE applyU' #-}
 instance (Known n, c a) => ApplyU' c n a '[] where
-    applyU' f = f . decomposeLast
+    applyU' _ f = f . decomposeLast
     {-# INLINE applyU' #-}
 
-applyU2 :: forall c l b. c :$ l => (forall a. c a => a -> a -> b) -> Union l -> Union l -> Maybe b
-applyU2 f (InternalUnion i a) u@(InternalUnion j _) = guard (i == j) $> applyU @c (f (unsafeCoerce a)) u
+toSome :: forall c l. c :$ l => Union l -> Some c
+toSome = applyU# (proxy# @c) Some
+
+applyU2# :: forall c l b. c :$ l => Proxy# c -> (forall a. c a => a -> a -> b) -> Union l -> Union l -> Maybe b
+applyU2# _ f (InternalUnion i a) u@(InternalUnion j _)
+    = guard (i == j) $> applyU# (proxy# @c) (f (unsafeCoerce a)) u
+{-# INLINABLE applyU2# #-}
+
+applyU2 :: forall c l b proxy. c :$ l => proxy c -> (forall a. c a => a -> a -> b) -> Union l -> Union l -> Maybe b
+applyU2 _ = applyU2# (proxy# @c)
 {-# INLINABLE applyU2 #-}
 
 
 instance (Hashable :$ l) => Hashable (Union l) where
-    hashWithSalt salt = applyU @Hashable (hashWithSalt salt)
+    hashWithSalt salt = applyU# (proxy# @Hashable) (hashWithSalt salt)
     {-# INLINABLE hashWithSalt #-}
 
 instance (NFData :$ l) => NFData (Union l) where
-    rnf = applyU @NFData rnf
+    rnf = applyU# (proxy# @NFData) rnf
     {-# INLINABLE rnf #-}
-
 
 instance (Show :$ l) => Show (Union l) where
     showsPrec i u
         = showParen (i >= 10)
         $ showString "Union "
-        . applyU @Show shows u
+        . applyU# (proxy# @Show) shows u
+
+instance (Eq t a) => Eq t (Union '[a]) where
+    a ==? b = decomposeLast a ==? decomposeLast b
+instance (Eq u (Union (a ': as)), Eq v b, t ~ Min u v) => Eq t (Union (b ': a ': as)) where
+    a ==? b = decompose a ==? decompose b
+
+instance (Ord t a) => Ord t (Union '[a]) where
+    a `compare'` b = decomposeLast a `compare'` decomposeLast b
+instance (Ord u (Union (a ': as)), Ord v b, t ~ Min u v) => Ord t (Union (b ': a ': as)) where
+    a `compare'` b = decompose a `compare'` decompose b
+
+
+instance CatFunctor (~>) (->) (UnionT l) where
+    map (NT f) (UnionT (InternalUnion n v)) = UnionT (InternalUnion n (f a))
+      where a = unsafeCoerce v :: f Any -- can be done since the function can not touch a anyways.
+

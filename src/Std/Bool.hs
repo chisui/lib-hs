@@ -12,6 +12,7 @@ module Std.Bool
     , Base.not, Base.otherwise, Base.bool
     ) where
 
+import "base" Data.Semigroup qualified as Base
 import "base" Data.Bool qualified as Base
 import "base" Data.Bits qualified as Base
 
@@ -20,7 +21,6 @@ import "ghc-prim" GHC.Prim ( proxy# )
 import "this" Std.Group
 import "this" Std.Ord
 import "this" Std.Basic
-import "this" Std.Partial
 
 
 data BoolOp
@@ -59,7 +59,7 @@ infixr 0 ==>
 
 instance BinOp       'And Base.Bool Base.Bool where op# _ = (Base.&&)
 instance Magma       'And Base.Bool
-instance Identity    'And Base.Bool where identity# _ = Base.True
+instance IdentityOp  'And Base.Bool where identity# _ = Base.True
 instance Associative 'And Base.Bool
 instance Idempotent  'And Base.Bool
 instance Commutative 'And Base.Bool
@@ -68,7 +68,7 @@ instance Magma       'Or  Base.Bool
 instance Associative 'Or  Base.Bool
 instance Idempotent  'Or  Base.Bool
 instance Commutative 'Or  Base.Bool
-instance Identity    'Or  Base.Bool where identity# _ = Base.False
+instance IdentityOp  'Or  Base.Bool where identity# _ = Base.False
 instance BinOp       'Xor Base.Bool Base.Bool where op# _ = Base.xor
 instance LeftDistributive  'And 'Or Base.Bool
 instance RightDistributive 'And 'Or Base.Bool
@@ -78,7 +78,7 @@ instance BinOp       'Nand Base.Bool Base.Bool where
     op# _ Base.True Base.True = Base.False
     op# _ _ _ = Base.True
 instance Magma       'Nand Base.Bool
-instance Identity    'Nand Base.Bool where identity# _ = Base.False
+instance IdentityOp  'Nand Base.Bool where identity# _ = Base.False
 instance Associative 'Nand Base.Bool
 instance Commutative 'Nand Base.Bool
 instance BinOp       'Nor  Base.Bool Base.Bool where
@@ -87,7 +87,7 @@ instance BinOp       'Nor  Base.Bool Base.Bool where
 instance Magma       'Nor  Base.Bool
 instance Associative 'Nor  Base.Bool
 instance Commutative 'Nor  Base.Bool
-instance Identity    'Nor  Base.Bool where identity# _ = Base.False
+instance IdentityOp  'Nor  Base.Bool where identity# _ = Base.False
 instance LeftDistributive  'Nand 'Nor Base.Bool
 instance RightDistributive 'Nand 'Nor Base.Bool
 instance LeftDistributive  'Nor 'Nand Base.Bool
@@ -109,3 +109,10 @@ instance Magma       'Impl Base.Bool
 
 deriving via (Basic Base.Bool) instance Eq 'Total Base.Bool
 deriving via (Basic Base.Bool) instance Ord 'Total Base.Bool
+
+instance BinOp 'And Ordering Ordering where op# _ = (Base.<>)
+deriving via (Monoidal Ordering) instance Magma       'And Ordering
+deriving via (Monoidal Ordering) instance Associative 'And Ordering
+deriving via (Monoidal Ordering) instance Idempotent  'And Ordering
+deriving via (Monoidal Ordering) instance Commutative 'And Ordering
+deriving via (Monoidal Ordering) instance IdentityOp  'And Ordering

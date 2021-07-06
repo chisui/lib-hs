@@ -146,3 +146,8 @@ deriving via (Unsafe Base.Bool) instance ToInt 'Partial Base.Bool
 deriving via (Basic [a]) instance HasItems [a]
 deriving via (Basic [a]) instance FromList 'Total [a]
 deriving via (Basic [a]) instance ToList 'Total [a]
+
+deriving via (Basic Base.Integer) instance FromInt 'Total Base.Integer
+deriving via (Unsafe Base.Integer) instance ToInt 'Partial Base.Integer
+deriving via (Basic Base.Integer) instance Pred 'Total Base.Integer
+deriving via (Basic Base.Integer) instance Succ 'Total Base.Integer

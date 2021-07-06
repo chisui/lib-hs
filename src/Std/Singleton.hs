@@ -2,7 +2,12 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
-module Std.Singleton where
+module Std.Singleton
+    ( liftProxy, unliftProxy
+    , Singleton(..), Known(..), Promote(..)
+    , val'
+    , SomeSingleton(..), unwrapSomeSingleton
+    ) where
 
 import "base" Data.Proxy ( Proxy(..) )
 import "base" Prelude qualified as Base
@@ -62,6 +67,9 @@ instance Promote 'Partial Nat where
 
 instance Singleton k => Singleton [k] where
     type S [k] = [S k]
+instance Singleton [k] => Known ('[] :: [k]) where
+    val _ = []
+    val# _ = []
 instance (Known a, Known as) => Known (a ': as) where
     val _ = val' @a : val' @as
     val# _ = val' @a : val' @as

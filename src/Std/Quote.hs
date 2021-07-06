@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Std.Quote
     ( QuasiQuoter(..)
-    , StringPart(..), FormatAst
+    , StringPart(..), FormatAst, stringPart
     , parseFormatString
     , failingQuoter
     , parseExp, parsePat, parseDecs, parseType
@@ -23,15 +23,16 @@ import "haskell-src-meta" Language.Haskell.Meta.Parse qualified as HS
 import "hashable" Data.Hashable ( Hashable )
 
 
-failingQuoter :: QuasiQuoter
-failingQuoter = QuasiQuoter
+failingQuoter :: String -> QuasiQuoter
+failingQuoter name = QuasiQuoter
     { quoteExp  = fail "n expression"
     , quotePat  = fail " pattern"
     , quoteDec  = fail " declaration"
     , quoteType = fail " type"
     }
   where
-    fail s = error $ "can not be applied as a" ++ s
+    fail :: String -> a
+    fail s = error $ name ++ " can not be applied as a" ++ s
 
 
 data StringPart
@@ -40,6 +41,10 @@ data StringPart
   deriving (Show, Eq, Ord, Generic )
 instance Hashable StringPart
 type FormatAst = [[StringPart]]
+
+stringPart :: (String -> a) -> (String -> a) -> StringPart -> a
+stringPart f _ (Literal a) = f a
+stringPart _ f (AntiQuote a) = f a
 
 lit, anti, var :: String -> StringPart
 lit = Literal . reverse
@@ -95,5 +100,10 @@ symbol = return . LitT . StrTyLit
 string :: String -> ExpQ
 string = return . LitE . StringL
 
-fromFormatAst :: (Q a -> Q a -> Q a) -> (Q a -> Q a -> Q a) -> (StringPart -> Q a) -> FormatAst -> Q a
-fromFormatAst cat catLines f = foldl1' catLines . map (foldl1' cat . map f)
+fromFormatAst
+    :: (Q a -> Q a -> Q a)
+    -> (Q a -> Q a -> Q a)
+    -> (String -> Q a)
+    -> (String -> Q a)
+    -> FormatAst -> Q a
+fromFormatAst cat catLines s q = foldl1' catLines . map (foldl1' cat . map (stringPart s q))

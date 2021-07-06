@@ -1,8 +1,18 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DefaultSignatures #-}
-module Std.Group where
+module Std.Group
+    ( BinOp(..), Magma
+    , BasicOps(..), (+), (-), (*), (/), (%)
+    , zero, negate, one, recip
+    , IdentityOp(..), Invertible(..)
+    , Associative, Idempotent, Commutative
+    , Upper(..), Lower(..), Bounded
+    , Quasigroup, UnitalMagma, Semigroup, Loop, InverseSemigroup, Monoid, Group, Abelian
+    , Semilattice, LeftDistributive, RightDistributive, Ring, CommutativeRing, Field
+    ) where
 
+import "base" Data.Proxy
 import "base" Prelude qualified as Base
 import "base" Control.Applicative qualified as Base
 
@@ -16,6 +26,8 @@ class BinOp (op :: k) a b | op a -> b where
     op :: proxy op -> a -> a -> b
     op _ = op# (proxy# @op)
     op# :: Proxy# op -> a -> a -> b
+    op# _ = op (Proxy @op)
+    {-# MINIMAL op | op# #-}
 
 data BasicOps
     = Add
@@ -42,7 +54,7 @@ type Mod = BinOp 'Mod
 
 class BinOp op a a => Magma (op :: k) a
 
-class Magma op a => Identity (op :: k) a where
+class Magma op a => IdentityOp (op :: k) a where
     identity :: proxy op -> a
     identity _ = identity# (proxy# @op)
     identity# :: Proxy# op -> a
@@ -54,12 +66,12 @@ class Magma op a => Invertible (op :: k) a where
     inv _ = inv# (proxy# @op)
     inv# :: Proxy# op -> a -> a
 
-zero :: Identity 'Add a => a
+zero :: IdentityOp 'Add a => a
 zero = identity# (proxy# @'Add)
 negate :: Invertible 'Add a => a -> a
 negate = inv# (proxy# @'Add)
 
-one :: Identity 'Mult a => a
+one :: IdentityOp 'Mult a => a
 one = identity# (proxy# @'Mult)
 recip :: Invertible 'Mult a => a -> a
 recip = inv# (proxy# @'Mult)
@@ -83,12 +95,12 @@ class Magma op a => Lower (op :: k) a where
 type Bounded op a = (Upper op a, Lower op a)
 
 type Quasigroup = Invertible
-type UnitalMagma = Identity
+type UnitalMagma = IdentityOp
 type Semigroup = Associative
-type Loop op a = (Quasigroup op a, Identity op a)
+type Loop op a = (Quasigroup op a, IdentityOp op a)
 type InverseSemigroup op a = (Semigroup op a, Invertible op a)
-type Monoid op a = (Semigroup op a, Identity op a)
-type Group op a = (Identity op a, Associative op a, Invertible op a)
+type Monoid op a = (Semigroup op a, IdentityOp op a)
+type Group op a = (IdentityOp op a, Associative op a, Invertible op a)
 type Abelian op a = (Group op a, Commutative op a)
 
 type Semilattice op a = (Associative op a, Commutative op a, Idempotent op a)
@@ -139,12 +151,12 @@ instance Base.Integral a => BinOp 'Mod (Numeric a) (Numeric a) where
 
 instance Base.Num a => Invertible 'Add (Numeric a) where
     inv# _ = coerce (Base.negate @a)
-instance Base.Num a => Identity 'Add (Numeric a) where
+instance Base.Num a => IdentityOp 'Add (Numeric a) where
     identity# _ = coerce (0 :: a)
 instance Base.Num a => Commutative 'Add (Numeric a)
 
 instance Base.Num a => Associative 'Mult (Numeric a)
-instance Base.Num a => Identity 'Mult (Numeric a) where
+instance Base.Num a => IdentityOp 'Mult (Numeric a) where
     identity# _ = coerce (1 :: a)
 instance Base.Num a => Commutative 'Mult (Numeric a)
 
@@ -157,14 +169,14 @@ instance BinOp 'Sub Base.Int Base.Int where op# _ = (Base.-)
 deriving via (Numeric Base.Int) instance Magma 'Add Base.Int
 deriving via (Numeric Base.Int) instance Associative 'Add Base.Int
 deriving via (Numeric Base.Int) instance Invertible 'Add Base.Int
-deriving via (Numeric Base.Int) instance Identity 'Add Base.Int
+deriving via (Numeric Base.Int) instance IdentityOp 'Add Base.Int
 deriving via (Numeric Base.Int) instance Commutative 'Add Base.Int
 instance BinOp 'Mult Base.Int Base.Int where op# _ = (Base.*)
 instance BinOp 'Div Base.Int (Res 'Partial Base.Int) where op# _ = errorToPartial2 (Base.div @Base.Int)
 
 deriving via (Numeric Base.Int) instance Magma 'Mult Base.Int
 deriving via (Numeric Base.Int) instance Associative 'Mult Base.Int
-deriving via (Numeric Base.Int) instance Identity 'Mult Base.Int
+deriving via (Numeric Base.Int) instance IdentityOp 'Mult Base.Int
 deriving via (Numeric Base.Int) instance LeftDistributive 'Mult 'Add Base.Int
 deriving via (Numeric Base.Int) instance RightDistributive 'Mult 'Add Base.Int
 
@@ -173,33 +185,37 @@ instance BinOp 'Sub Base.Integer Base.Integer where op# _ = (Base.-)
 deriving via (Numeric Base.Integer) instance Magma 'Add Base.Integer
 deriving via (Numeric Base.Integer) instance Associative 'Add Base.Integer
 deriving via (Numeric Base.Integer) instance Invertible 'Add Base.Integer
-deriving via (Numeric Base.Integer) instance Identity 'Add Base.Integer
+deriving via (Numeric Base.Integer) instance IdentityOp 'Add Base.Integer
 deriving via (Numeric Base.Integer) instance Commutative 'Add Base.Integer
 instance BinOp 'Mult Base.Integer Base.Integer where op# _ = (Base.*)
 instance BinOp 'Div Base.Integer (Res 'Partial Base.Integer) where op# _ = errorToPartial2 (Base.div @Base.Integer)
 
 deriving via (Numeric Base.Integer) instance Magma 'Mult Base.Integer
 deriving via (Numeric Base.Integer) instance Associative 'Mult Base.Integer
-deriving via (Numeric Base.Integer) instance Identity 'Mult Base.Integer
+deriving via (Numeric Base.Integer) instance IdentityOp 'Mult Base.Integer
 deriving via (Numeric Base.Integer) instance LeftDistributive 'Mult 'Add Base.Integer
 deriving via (Numeric Base.Integer) instance RightDistributive 'Mult 'Add Base.Integer
 
-instance Base.Semigroup a => BinOp 'Add (Monoidal a) (Monoidal a) where
+instance Base.Semigroup a => BinOp op (Monoidal a) (Monoidal a) where
     op# _ = coerce ((Base.<>) :: a -> a -> a)
-instance Base.Semigroup a => Magma 'Add (Monoidal a)
-instance Base.Semigroup a => Associative 'Add (Monoidal a)
-instance Base.Monoid a => Identity 'Add (Monoidal a) where
+instance Base.Semigroup a => Magma op (Monoidal a)
+instance Base.Semigroup a => Associative op (Monoidal a)
+instance Base.Monoid a => IdentityOp op (Monoidal a) where
     identity# _ = coerce (Base.mempty :: a)
-
 
 instance Base.Alternative f => BinOp 'Add (Basic1 f a) (Basic1 f a) where
     op# _ = coerce ((Base.<|>) :: f a -> f a -> f a)
 instance Base.Alternative f => Magma 'Add (Basic1 f a)
 instance Base.Alternative f => Associative 'Add (Basic1 f a)
-instance Base.Alternative f => Identity 'Add (Basic1 f a) where
+instance Base.Alternative f => IdentityOp 'Add (Basic1 f a) where
     identity# _ = coerce (Base.empty :: f a)
 
 instance BinOp 'Add [a] [a] where op# _ = (Base.<>)
 deriving via (Basic1 [] a) instance Magma 'Add [a]
 deriving via (Basic1 [] a) instance Associative 'Add [a]
-deriving via (Basic1 [] a) instance Identity 'Add [a]
+deriving via (Basic1 [] a) instance IdentityOp 'Add [a]
+
+instance BinOp op a a => BinOp op (Res t a) (Res t a) where
+    op# p (FullRes a) (FullRes b) = FullRes (op# p a b)
+    op# _ EmptyRes _ = EmptyRes 
+    op# _ _ EmptyRes = EmptyRes 

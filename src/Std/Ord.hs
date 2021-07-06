@@ -2,11 +2,16 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-module Std.Ord where
+module Std.Ord
+    ( Eq(..), (==), (/=)
+    , Ord(..), compare, (<), (<=), (>), (>=), max, min
+    , Res(..), Totallity(..), Bool(..)
+    , Unordered(..)
+    , Ordering(..)
+    ) where
 
-import "base" GHC.Generics
 import "base" Prelude qualified as Base
-import "base" Data.Bool ( Bool(..), not, (||) )
+import "base" Data.Bool ( Bool(..), not, (||), bool, (&&) )
 import "base" Data.Ord ( Ordering(..) )
 
 import "this" Std.Partial
@@ -35,7 +40,8 @@ instance Eq 'Total a => Base.Eq (Basic a) where
     (==) = coerce ((==) @a)
     (/=) = coerce ((/=) @a)
 instance GThrough GEq a => Eq 'Total (Generically a) where
-    Generically a ==? Generically b = toRep a `gEq` toRep b
+    Generically a ==? Generically b = from rep a `gEq` from rep b
+
 class GEq f where
     gEq :: f x -> f x -> Res 'Total Bool
 instance GEq f => GEq (M1 i c f) where
@@ -50,6 +56,25 @@ instance (GEq f, GEq g) => GEq (f :*: g) where
     (a0 :*: b0) `gEq` (a1 :*: b1) = lift2 (||) (gEq a0 a1) (gEq b0 b1)
 instance GEq U1 where
     _ `gEq` _ = pure True
+
+instance Eq t (f x) => Eq t (M1 i c f x) where
+    (==?) = coerce ((==?) :: f x -> f x -> Res t Bool)
+    (/=?) = coerce ((/=?) :: f x -> f x -> Res t Bool)
+instance Eq t a => Eq t (K1 i a x) where
+    (==?) = coerce ((==?) :: a -> a -> Res t Bool)
+    (/=?) = coerce ((/=?) :: a -> a -> Res t Bool)
+instance (Eq u (f x), Eq v (g x), t ~ Min u v) => Eq t ((f :+: g) x) where
+    L1 a ==? L1 b = joinRes @u @v (pure <$> (a ==? b))
+    R1 a ==? R1 b = joinRes @u @v $ pure (a ==? b)
+    _ ==? _ = pure False
+instance (Eq u (f x), Eq v (g x), t ~ Min u v) => Eq t ((f :*: g) x) where
+    (a :*: b) ==? (a' :*: b') = zipRes (&&) (a ==? a') (b ==? b')
+instance Eq 'Total (U1 x) where
+    _ ==? _ = pure True
+    _ /=? _ = pure False
+instance Eq 'Total (V1 x) where
+    (==?) = absurdV1
+    (/=?) = absurdV1
 
 class Eq t a => Ord (t :: Totallity) a | a -> t where
     compare'                 :: a -> a -> Res t Ordering
@@ -69,20 +94,34 @@ class Eq t a => Ord (t :: Totallity) a | a -> t where
 
         -- These two default methods use '<=' rather than 'compare'
         -- because the latter is often more expensive
-    max' x y = (\b -> if b then x else y) <$> (x <=? y)
-    min' x y = (\b -> if b then y else x) <$> (x <=? y)
+    max' x y = bool x y <$> (x <=? y)
+    min' x y = bool y x <$> (x <=? y)
     {-# MINIMAL compare' | (<=?) #-}
 
 compare              :: Ord 'Total a => a -> a -> Ordering
 (<), (<=), (>), (>=) :: Ord 'Total a => a -> a -> Bool
 max, min             :: Ord 'Total a => a -> a -> a
 compare = total2 compare'
-(<)  = total2 (<?) 
+(<)  = total2 (<?)
 (<=) = total2 (<=?)
-(>)  = total2 (>?) 
+(>)  = total2 (>?)
 (>=) = total2 (>=?)
 max  = total2 max'
 min  = total2 min'
+
+
+newtype Unordered a = Unordered a
+instance Eq 'Partial (Unordered a) where
+    (==?) = undefined
+    (/=?) = undefined
+instance Ord 'Partial (Unordered a) where
+    compare' = undefined
+    (<?)     = undefined
+    (<=?)    = undefined
+    (>?)     = undefined
+    (>=?)    = undefined
+    max'     = undefined
+    min'     = undefined
 
 instance Base.Ord a => Ord 'Total (Basic a) where
     compare' = liftTotal2 (Base.compare @a)
@@ -114,3 +153,29 @@ deriving via (Basic Ordering) instance Eq  'Total Ordering
 deriving via (Basic Ordering) instance Ord 'Total Ordering
 deriving via (Basic Base.Int) instance Eq  'Total Base.Int
 deriving via (Basic Base.Int) instance Ord 'Total Base.Int
+deriving via (Basic Base.Char) instance Eq  'Total Base.Char
+deriving via (Basic Base.Char) instance Ord 'Total Base.Char
+deriving via (Basic Base.Integer) instance Eq  'Total Base.Integer
+deriving via (Basic Base.Integer) instance Ord 'Total Base.Integer
+
+instance (Min t t ~ t, Eq t a) => Eq t [a] where
+    [] ==? [] = pure True
+    (a : as) ==? (b : bs) = zipRes @t @t (&&) (a ==? b) (as ==? bs)
+    _ ==? _ = pure False
+
+instance (Min t t ~ t, Ord t a) => Ord t [a] where
+    (a : as) `compare'` (b : bs) = zipRes @t @t (Base.<>) (a `compare'` b) (as `compare'` bs)
+    [] `compare'` [] = pure EQ
+    [] `compare'` _ = pure LT
+    _ `compare'` _ = pure GT
+
+instance (Eq u a, Eq v b, t ~ Min u v) => Eq t (Base.Either a b) where
+    Base.Left  a ==? Base.Left  b = joinRes @u @v (pure <$> (a ==? b))
+    Base.Right a ==? Base.Right b = joinRes @u @v (pure (a ==? b))
+    _ ==? _ = pure False
+instance (Ord u a, Ord v b, t ~ Min u v) => Ord t (Base.Either a b) where
+    compare' (Base.Left  a) (Base.Left  b) = joinRes @u @v (pure <$> compare' a b)
+    compare' (Base.Right a) (Base.Right b) = joinRes @u @v (pure  $  compare' a b)
+    compare' (Base.Left  _) _ = pure GT
+    compare' _ _ = pure LT
+--deriving via (Basic Base.Int) instance Ord 'Total Base.Int

@@ -1,6 +1,10 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-module Std.Some where
+module Std.Some
+    ( Some(..), SomeT(..)
+    , use, useT, use2, useT2
+    , castSome, narrowSome
+    , type (==>), Castable
+    ) where
 
 import "base" Prelude ( Maybe(..) )
 import "base" GHC.Exception

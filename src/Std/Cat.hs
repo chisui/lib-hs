@@ -5,31 +5,35 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Cat
     ( HASK
-    , CatFunctor(..), EndoFunctor, Functor
-    , CatPure(..), Pure
+    , CatFunctor(..), EndoFunctor, Functor, mapEndo
+    , CatPure(..), Pure, pure
     , CatAp(..), Ap
     , CatLift2(..), Lift2
     , CatApplicative, Applicative
     , CatBind(..), Bind, (>>=)
     , CatJoin(..), Join
     , CatMonad, Monad
+    , CatMonadFix(..), MonadFix
     , Identity(..)
     , Semigroupoid(..)
     , CatId(..)
     , Category
-    , Closed(..), flip
+    , Groupoid(..)
+    , Closed(..), flip, const, on, on'
+    , CatFix(..)
     , CatDistributive(..), Distributive
-    , Iso(..), type (<->), type (<~>)
+    , Iso(..), type (<->), type (<~>), coerceIso, coproductIso, productIso
     , Dual(..), type (<--), type (<~)
-    , NT(..), type (~>)
-    , NT1(..), type (~~>)
+    , NT(..), η, type (~>)
+    , NT1, type (~~>)
     , CatKleisli(..), Kleisli
     , Cartesian(..), Cocartesian(..)
     , CatAssociative(..)
     , Prod1(..), Product1, Coproduct1
     , CatLeftFunctor(..), EndoLeftFunctor, LeftFunctor
     , CatRightFunctor(..), EndoRightFunctor, RightFunctor
-    , CatBifunctor(..), EndoBifunctor, Bifunctor
+    , CatBifunctor(..), EndoBifunctor, Bifunctor, bimap
+    , CatProfunctor, EndoProfunctor, Profunctor, catDimap, dimap
     , CatExtract(..), Extract, CatExtend(..), Extend, CatDuplicate(..), Duplicate, CatComonad, Comonad
     , ($)
     ) where
@@ -37,7 +41,7 @@ module Std.Cat
 import "base" Data.Either
 import "base" Data.Void
 import "base" Data.Kind ( Type )
-import "base" Data.Coerce ( coerce )
+import "base" Data.Coerce ( Coercible, coerce )
 import "base" Data.Maybe ( Maybe )
 import "base" Data.Function qualified as Base
 import "base" Data.Functor qualified as Base
@@ -55,12 +59,17 @@ class CatFunctor (c0 :: k0 -> k0 -> Type) (c1 :: k1 -> k1 -> Type) (f :: k0 -> k
     map = (<$>)
     (<$>) = map
 
+mapEndo :: EndoFunctor cat f => a `cat` b -> f a `cat` f b
+mapEndo = map
+
 type EndoFunctor c = CatFunctor c c
 type Functor = EndoFunctor HASK
 
 class EndoFunctor cat f => CatPure cat f where
-    pure :: a `cat` f a
+    catPure :: a `cat` f a
 type Pure = CatPure HASK
+pure :: Pure f => a -> f a
+pure = catPure
 
 class EndoFunctor cat f => CatExtract cat f where
     extract :: f a `cat` a
@@ -78,7 +87,7 @@ type Extend = CatExtend HASK
 m >>= f = f =<< m
 
 (<=<) :: CatMonad cat m => b `cat` m c -> a `cat` m b -> a `cat` m c
-f <=< g = (=<<) f . (=<<) g . pure
+f <=< g = (=<<) f . (=<<) g . catPure
 
 class EndoFunctor cat f => CatJoin cat f where
     join :: f (f a) `cat` f a
@@ -91,6 +100,7 @@ type Duplicate = CatDuplicate HASK
 class CatDistributive cat g where
     distribute :: EndoFunctor cat f => f (g a) `cat` g (f a)
 type Distributive = CatDistributive HASK
+
 
 class CatAp cat f where
     (<*>) :: f (a `cat` b) -> f a `cat` f b
@@ -107,11 +117,14 @@ type Monad = CatMonad HASK
 class (Category cat, CatExtract cat f, CatExtend cat f, CatDuplicate cat f) => CatComonad cat f
 type Comonad = CatComonad HASK
 
+class (Closed cat, CatMonad cat f) => CatMonadFix cat f where
+    mfix :: Exp cat a (f a) `cat` f a
+type MonadFix = CatMonadFix HASK
 
 -- instances
 
 instance CatFunctor      HASK HASK Identity where map = coerce
-instance CatPure         HASK      Identity where pure = coerce
+instance CatPure         HASK      Identity where catPure = coerce
 instance CatAp           HASK      Identity where (<*>) = coerce
 instance CatLift2        HASK      Identity where lift2 = coerce
 instance CatBind         HASK      Identity where (=<<) = coerce
@@ -126,7 +139,7 @@ instance CatDistributive HASK ((->) a) where
     distribute = flip (map . flip id)
 
 instance CatFunctor     HASK HASK Maybe where map = Base.fmap
-instance CatPure        HASK      Maybe where pure = Base.pure
+instance CatPure        HASK      Maybe where catPure = Base.pure
 instance CatAp          HASK      Maybe where (<*>) = (Base.<*>)
 instance CatLift2       HASK      Maybe where lift2 = Base.liftA2
 instance CatBind        HASK      Maybe where (=<<) = (Base.=<<)
@@ -145,6 +158,8 @@ class Semigroupoid cat where
 class CatId cat where
     id :: cat a a
 class (Semigroupoid cat, CatId cat) => Category cat
+class Category cat => Groupoid cat where
+    invCat :: a `cat` b -> b `cat` a
 
 
 instance Semigroupoid HASK where (.) = (Base..)
@@ -158,11 +173,22 @@ data Iso cat a b = (:<->)
 type (<->) = Iso HASK
 type (<~>) = Iso (~>)
 
+coerceIso :: forall a b. (Coercible a b, Coercible b a) => a <-> b
+coerceIso = coerce @a @b :<-> coerce @b @a
+
+productIso :: Cartesian cat => a `cat` b -> a `cat` c -> Product cat b c `cat` a -> Iso cat a (Product cat b c)
+productIso l r f = (l &&& r) :<-> f
+
+coproductIso :: Cocartesian cat => b `cat` a -> c `cat` a -> a `cat` Coproduct cat b c -> Iso cat a (Coproduct cat b c)
+coproductIso l r f = f :<-> (l ||| r)
+
 instance Semigroupoid cat => Semigroupoid (Iso cat) where
     (t0 :<-> f0) . (t1 :<-> f1) = (t0 . t1) :<-> (f1 . f0)
 instance CatId cat => CatId (Iso cat) where
     id = id :<-> id
 instance Category cat => Category (Iso cat)
+instance Category cat => Groupoid (Iso cat) where
+    invCat (t :<-> f) = f :<-> t
 
 newtype Dual cat a b = Dual
     { dual :: b `cat` a
@@ -177,13 +203,13 @@ instance CatId cat => CatId (Dual cat) where
 instance Category cat => Category (Dual cat)
 
 newtype NT cat f g = NT
-    { nt :: forall a. f a `cat` g a
+    { eta :: forall a. f a `cat` g a
     }
+η :: NT cat f g -> (forall a. f a `cat` g a)
+η = eta
 type (~>) = NT HASK
 
-newtype NT1 cat f g a = NT1
-    { nt1 :: f a `cat` g a
-    }
+type NT1 = Prod1
 type (~~>) = NT1 HASK
 
 instance Semigroupoid cat => Semigroupoid (NT cat) where
@@ -203,7 +229,7 @@ instance (CatMonad cat m, Semigroupoid cat) => Semigroupoid (CatKleisli cat m) w
     (.) = coerce ((<=<) :: b `cat` m c -> a `cat` m b -> a `cat` m c)
 instance (CatPure cat m, CatId cat) => CatId (CatKleisli cat m) where
     id :: forall a. CatKleisli cat m a a
-    id = coerce (pure :: a `cat` m a)
+    id = coerce (catPure :: a `cat` m a)
 instance (CatMonad cat m, Category cat) => Category (CatKleisli cat m)
 
 
@@ -213,8 +239,18 @@ class Cartesian cat => Closed cat where
     curry :: (Product cat a b `cat` c) -> a `cat` Exp cat b c
     uncurry :: (a `cat` Exp cat b c) -> Product cat a b `cat` c
 
+const :: Closed cat => a `cat` Exp cat b a
+const = curry fst
+
 flip :: (Closed cat, CatAssociative cat (Product cat)) => b `cat` Exp cat a c -> a `cat` Exp cat b c
 flip f = curry (uncurry f . assoc)
+
+on' :: Closed cat => a `cat` Exp cat b c -> a' `cat` a -> b' `cat` b -> a' `cat` Exp cat b' c
+on' f g h = curry (uncurry f . (g *** h))
+
+on :: Closed cat => a `cat` Exp cat a c -> b `cat` a -> b `cat` Exp cat b c
+on f g = on' f g g
+infixl 0 `on`
 
 instance Closed HASK where
     type Exp HASK = HASK
@@ -224,17 +260,23 @@ instance Closed HASK where
 
 instance Closed (~>) where
     type Exp (~>) = (~~>)
-    apply = NT ((\(NT1 f, a) -> f a) . prod1)
-    curry (NT f) = NT (\a -> NT1 (\b -> f (Prod1 (a, b))))
-    uncurry (NT f) = NT (\(Prod1 (a, b)) -> nt1 (f a) b)
+    apply = NT ((\(Prod1 f, a) -> f a) . prod1)
+    curry (NT f) = NT (\a -> Prod1 (\b -> f (Prod1 (a, b))))
+    uncurry (NT f) = NT (\(Prod1 (a, b)) -> prod1 (f a) b)
 
 instance ( Monad m
          , Distributive m
          ) => Closed (Kleisli m) where
     type Exp (Kleisli m) = Kleisli m
     apply = Kleisli (uncurry kleisli)
-    curry f = Kleisli (pure . Kleisli . (kleisli f .) . (,))
+    curry f = Kleisli (catPure . Kleisli . (kleisli f .) . (,))
     uncurry f = Kleisli (uncurry ((. flip kleisli) . (>>=) . kleisli f))
+
+class Closed cat => CatFix cat where
+    fix :: Exp cat a a `cat` a
+
+instance CatFix HASK where
+    fix f = let x = f x in x
 
 class EndoBifunctor cat (Product cat) => Cartesian (cat :: k -> k -> Type) where
     type Product cat :: k -> k -> k
@@ -246,7 +288,7 @@ class EndoBifunctor cat (Product cat) => Cartesian (cat :: k -> k -> Type) where
 
     (&&&) :: b `cat` c -> b `cat` c' -> b `cat` Product cat c c'
     infixr 3 &&&
-    f &&& g = bimap f g . copy
+    f &&& g = catBimap f g . copy
     {-# MINIMAL fst, snd, (copy | (&&&)) #-}
 
 class EndoBifunctor cat (Coproduct cat) => Cocartesian (cat :: k -> k -> Type) where
@@ -259,7 +301,7 @@ class EndoBifunctor cat (Coproduct cat) => Cocartesian (cat :: k -> k -> Type) w
 
     (|||) :: b `cat` d -> c `cat` d -> Coproduct cat b c `cat` d
     infixr 2 |||
-    f ||| g = fuse . bimap f g
+    f ||| g = fuse . catBimap f g
     {-# MINIMAL lft, rght, (fuse | (|||)) #-}
 
 instance Cocartesian cat => Cartesian (Dual cat) where
@@ -287,24 +329,36 @@ instance ( CatMonad cat m
          , EndoBifunctor (CatKleisli cat m) (Product cat)
          ) => Cartesian (CatKleisli cat m) where
     type Product (CatKleisli cat m) = Product cat
-    fst = Kleisli (pure . fst)
-    snd = Kleisli (pure . snd)
-    copy = Kleisli (pure . copy)
+    fst = Kleisli (catPure . fst)
+    snd = Kleisli (catPure . snd)
+    copy = Kleisli (catPure . copy)
 
 instance ( CatMonad cat m
          , Cocartesian cat
          , EndoBifunctor (CatKleisli cat m) (Coproduct cat)
          ) => Cocartesian (CatKleisli cat m) where
     type Coproduct (CatKleisli cat m) = Coproduct cat
-    lft = Kleisli (pure . lft)
-    rght = Kleisli (pure . rght)
-    fuse = Kleisli (pure . fuse)
+    lft = Kleisli (catPure . lft)
+    rght = Kleisli (catPure . rght)
+    fuse = Kleisli (catPure . fuse)
+
+--instance Closed (CatKleisli (cat :: Type -> Type -> Type) m) where
+--    type Exp (CatKleisli cat m) = CatKleisli cat m
 
 newtype Prod1 p f g a = Prod1
     { prod1 :: f a `p` g a
     }
 type Product1 = Prod1 (,)
 type Coproduct1 = Prod1 Either
+
+
+instance ( CatFunctor c c f
+         , CatFunctor c c g
+         , CatBifunctor c c HASK p
+         ) => CatFunctor c HASK (Prod1 p f g) where
+    map :: forall a b. a `c` b -> Prod1 p f g a -> Prod1 p f g b
+    map f = coerce (catBimap @c @c (map f) (map f) :: p (f a) (g a) -> p (f b) (g b))
+
 
 instance Cartesian (~>) where
     type Product (~>) = Product1
@@ -379,43 +433,72 @@ instance Monoidal HASK Either where
     type Id HASK Either = Void
     idl = (absurd ||| id) :<-> Right
 
-class (Category r, Category t) => CatLeftFunctor r t p | p r -> t, p t -> r where
+class (Category r, Category t) => CatLeftFunctor r t p where
     left :: r a b -> t (p a c) (p b c)
-    default left :: CatBifunctor r s t p => r a b -> t (p a c) (p b c)
-    left = (`bimap` id)
 type EndoLeftFunctor cat = CatLeftFunctor cat cat
 type LeftFunctor = EndoLeftFunctor HASK
 
-class (Category s, Category t) => CatRightFunctor s t q | q s -> t, q t -> s where
+newtype Left p x a = MkLeft
+    { unLeft :: p a x
+    }
+instance LeftFunctor p => CatFunctor HASK HASK (Left p x) where
+    map f (MkLeft a) = MkLeft (left f a)
+
+newtype Right p x a = MkRight
+    { unRight :: p x a
+    }
+instance RightFunctor p => CatFunctor HASK HASK (Right p x) where
+    map f (MkRight a) = MkRight (right f a)
+
+class (Category s, Category t) => CatRightFunctor s t q where
     right :: s a b -> t (q c a) (q c b)
-    default right :: CatBifunctor r s t q => s a b -> t (q c a) (q c b)
-    right = bimap id
 type EndoRightFunctor cat = CatRightFunctor cat cat
 type RightFunctor = EndoRightFunctor HASK
 
-class (CatLeftFunctor r t p, CatRightFunctor s t p) => CatBifunctor r s t p | p r -> s t, p s -> r t, p t -> r s where
-    bimap :: a `r` b -> c `s` d -> (a `p` c) `t` (b `p` d)
+
+class (CatLeftFunctor r t p, CatRightFunctor s t p) => CatBifunctor r s t p where
+    catBimap, (***) :: a `r` b -> c `s` d -> (a `p` c) `t` (b `p` d)
+    catBimap f g = left f . right g
+    (***) = catBimap
 type EndoBifunctor cat = CatBifunctor cat cat cat
 type Bifunctor = EndoBifunctor HASK
+bimap :: Bifunctor p => (a -> b) -> (a' -> b') -> p a a' -> p b b'
+bimap = catBimap
 
-instance CatLeftFunctor  HASK HASK (,)
-instance CatRightFunctor  HASK HASK (,)
-instance CatBifunctor HASK HASK HASK (,) where
-    bimap f g (a,b)= (f a, g b)
+type CatProfunctor c = CatBifunctor (Dual c)
+type EndoProfunctor cat = CatProfunctor cat cat cat
+type Profunctor = EndoProfunctor HASK
 
-instance CatLeftFunctor  HASK HASK Either
-instance CatRightFunctor  HASK HASK Either
+catDimap :: CatProfunctor r s t p => b `r` a -> c `s` d -> (a `p` c) `t` (b `p` d)
+catDimap f = catBimap (Dual f)
+
+dimap :: Profunctor p => (b -> a) -> (a' -> b') -> p a a' -> p b b'
+dimap = catDimap
+
+instance CatLeftFunctor    HASK HASK (,) where left f (a, b) = (f a, b)
+instance CatRightFunctor   HASK HASK (,) where right f (a, b) = (a, f b)
+instance CatBifunctor HASK HASK HASK (,) where catBimap f g (a,b) = (f a, g b)
+
+instance CatBifunctor cat cat cat f => CatLeftFunctor  (Iso cat) (Iso cat) f where left  f = left  (to f) :<-> left  (from f)
+instance CatBifunctor cat cat cat f => CatRightFunctor (Iso cat) (Iso cat) f where right f = right (to f) :<-> right (from f)
+instance CatBifunctor cat cat cat f => CatBifunctor (Iso cat) (Iso cat) (Iso cat) f
+
+instance CatLeftFunctor    HASK HASK Either where
+    left f (Left  a) = Left (f a)
+    left _ (Right a) = Right a
+instance CatRightFunctor   HASK HASK Either where
+    right _ (Left  a) = Left a
+    right f (Right a) = Right (f a)
 instance CatBifunctor HASK HASK HASK Either where
-    bimap f _ (Left a) = Left (f a)
-    bimap _ g (Right a) = Right (g a)
-
+    catBimap f _ (Left  a) = Left  (f a)
+    catBimap _ g (Right a) = Right (g a)
 
 instance EndoLeftFunctor  HASK f => CatLeftFunctor  (~>) (~>) (Prod1 f) where
     left (NT f) = NT (Prod1 . left f . prod1)
 instance EndoRightFunctor  HASK f => CatRightFunctor  (~>) (~>) (Prod1 f) where
     right (NT f) = NT (Prod1 . right f . prod1)
 instance EndoBifunctor HASK f => CatBifunctor (~>) (~>) (~>) (Prod1 f) where
-    bimap (NT f) (NT g) = NT (Prod1 . bimap f g . prod1)
+    catBimap (NT f) (NT g) = NT (Prod1 . catBimap f g . prod1)
 
 
 instance CatLeftFunctor c0 c1 f => CatLeftFunctor (Dual c0) (Dual c1) f where
@@ -423,29 +506,30 @@ instance CatLeftFunctor c0 c1 f => CatLeftFunctor (Dual c0) (Dual c1) f where
 instance CatRightFunctor c0 c1 f => CatRightFunctor (Dual c0) (Dual c1) f where
     right (Dual f) = Dual (right f)
 instance CatBifunctor c0 c1 c2 f => CatBifunctor (Dual c0) (Dual c1) (Dual c2) f where
-    bimap (Dual f) (Dual g) = Dual (bimap f g)
+    catBimap (Dual f) (Dual g) = Dual (catBimap f g)
 
-instance ( CatAssociative cat f
-         , EndoLeftFunctor cat f
-         , CatDistributive cat m
-         , forall c. EndoFunctor cat (f c)
-         , CatMonad cat m
-         , EndoFunctor cat m
-         ) => CatLeftFunctor (CatKleisli cat m) (CatKleisli cat m) f where
-    left :: forall a b c. CatKleisli cat m a b -> CatKleisli cat m (f a c) (f b c)
-    left (Kleisli f) = Kleisli (map assoc' . distribute . assoc . left f)
-      where assoc' = assoc :: f c b `cat` f b c
-instance ( CatAssociative cat f
-         , EndoRightFunctor cat f
-         , CatDistributive cat m
-         , forall c. EndoFunctor cat (f c)
-         , CatMonad cat m
-         ) => CatRightFunctor (CatKleisli cat m) (CatKleisli cat m) f where
-    right (Kleisli f) = Kleisli (distribute . right f)
-instance ( CatAssociative cat f
-         , CatDistributive cat m
-         , EndoBifunctor cat f
-         , forall c. EndoFunctor cat (f c)
-         , CatMonad cat m
-         ) => CatBifunctor (CatKleisli cat m) (CatKleisli cat m) (CatKleisli cat m) f where
-    bimap f g = left f . right g
+instance CatLeftFunctor (Dual HASK) HASK HASK where left (Dual g) f = f . g
+instance CatRightFunctor      HASK  HASK HASK where right = (.)
+instance CatBifunctor   (Dual HASK) HASK HASK HASK
+
+instance ( CatAssociative HASK f
+         , EndoLeftFunctor HASK f
+         , CatDistributive HASK m
+         , CatMonad HASK m
+         , EndoFunctor HASK m
+         ) => CatLeftFunctor (CatKleisli HASK m) (CatKleisli HASK m) f where
+    left (Kleisli f) = Kleisli (map unLeft . distribute . map f . MkLeft)
+instance ( CatAssociative HASK f
+         , EndoRightFunctor HASK f
+         , CatDistributive HASK m
+         , CatMonad HASK m
+         ) => CatRightFunctor (CatKleisli HASK m) (CatKleisli HASK m) f where
+    right (Kleisli f) = Kleisli (map unRight . distribute . map f . MkRight)
+instance ( CatAssociative HASK f
+         , CatDistributive HASK m
+         , EndoLeftFunctor HASK f
+         , EndoRightFunctor HASK f
+         , EndoBifunctor HASK f
+         , CatMonad HASK m
+         ) => CatBifunctor (CatKleisli HASK m) (CatKleisli HASK m) (CatKleisli HASK m) f where
+    catBimap f g = left f . right g

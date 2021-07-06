@@ -68,8 +68,8 @@ instance Base.Functor f => CatFunctor HASK HASK (Basic1 f) where
     map = coerce (Base.fmap :: (a -> b) -> f a -> f b)
 
 instance Base.Applicative f => CatPure HASK (Basic1 f) where
-    pure :: forall a. a -> Basic1 f a
-    pure = coerce (Base.pure :: a -> f a)
+    catPure :: forall a. a -> Basic1 f a
+    catPure = coerce (Base.pure :: a -> f a)
 instance Base.Applicative f => CatAp HASK (Basic1 f) where
     (<*>) :: forall a b. Basic1 f (a -> b) -> Basic1 f a -> Basic1 f b
     (<*>) = coerce ((Base.<*>) :: f (a -> b) -> f a -> f b)

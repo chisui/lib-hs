@@ -1,24 +1,22 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Std.TypeError
-    ( TypeError, type ErrorMessage(..)
+    ( TypeError, ErrorMessage(..)
     , typeError
     ) where
 
-import "base" GHC.TypeLits ( TypeError, type ErrorMessage(..) )
+import "base" GHC.TypeLits ( TypeError, ErrorMessage(..) )
 
 import "this" Std.Quote
-import "this" Std.Cat ( (.), ($) )
-import "this" Std.Basic ()
+import "this" Std.Cat ( (.) )
 
 
 typeError :: QuasiQuoter
-typeError = failingQuoter { quoteType = makeTypeError . parseFormatString "" }
+typeError = (failingQuoter "typeError") { quoteType = makeTypeError . parseFormatString "" }
   where
     makeTypeError l = [t| TypeError $(makeErrorMessage l) |]
 
     makeErrorMessage = fromFormatAst
         (\l r -> [t| $l ':<>: $r |])
         (\l r -> [t| $l ':$$: $r |])
-        $ \case
-            Literal   a -> [t| 'Text     $(symbol a)    |]
-            AntiQuote a -> [t| 'ShowType $(parseType a) |]
+        (\a -> [t| 'Text     $(symbol a)    |])
+        (\a -> [t| 'ShowType $(parseType a) |])

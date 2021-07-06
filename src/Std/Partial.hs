@@ -5,12 +5,19 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
-module Std.Partial where
+module Std.Partial
+    ( Totallity(..), Res(..)
+    , Undefinable(..)
+    , fromRes, toRes, total, total2
+    , Min, joinRes, zipRes, zipRes3, zipRes4
+    , (.?), (=<<?), (?>>=)
+    , type (-!>), type (-?>)
+    ) where
 
-import "base" GHC.Generics ( Generic )
 import "base" Data.Kind ( Type )
 import "base" Data.Maybe ( Maybe, maybe )
 
+import "this" Std.Generic
 import "this" Std.Cat
 import "this" Std.Debug
 
@@ -24,6 +31,10 @@ data Res (t :: Totallity) (a :: Type) where
     FullRes :: a -> Res t a
     EmptyRes :: Res 'Partial a
 
+class Undefinable a where                            undefined :: Undefinable a => a
+instance Undefinable b => Undefinable (a -> b) where undefined _ = undefined
+instance Undefinable (Res 'Partial a) where          undefined = EmptyRes
+
 type (-!>) a b = a -> Res 'Total b
 type (-?>) a b = a -> Res 'Partial b
 
@@ -31,7 +42,7 @@ instance CatFunctor HASK HASK (Res t) where
     map f (FullRes a) = FullRes (f a)
     map _ EmptyRes = EmptyRes
 instance CatPure HASK (Res t) where
-    pure = FullRes
+    catPure = FullRes
 instance CatAp HASK (Res t) where
     FullRes f <*> FullRes a = FullRes (f a)
     EmptyRes <*> _ = EmptyRes
@@ -74,7 +85,7 @@ joinRes (FullRes (FullRes a)) = FullRes a
 joinRes (FullRes EmptyRes) = EmptyRes
 joinRes EmptyRes = EmptyRes
 
-zipRes :: (a -> b -> c) -> Res t0 a -> Res t1 b -> Res (t0 `Min` t1) c
+zipRes :: forall t0 t1 a b c. (a -> b -> c) -> Res t0 a -> Res t1 b -> Res (t0 `Min` t1) c
 zipRes f (FullRes a) (FullRes b) = pure (f a b)
 zipRes _ EmptyRes _ = EmptyRes
 zipRes _ _ EmptyRes = EmptyRes
