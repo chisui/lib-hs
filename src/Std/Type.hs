@@ -10,7 +10,6 @@ module Std.Type
     , AllImplement
     , type (==)(..)
     , type (===)
-    , same
     , Concat
     , Length
     ) where
@@ -25,7 +24,6 @@ import "base" GHC.TypeLits as Exp
 import "ghc-prim" GHC.Prim as Exp ( proxy#, Proxy# )
 
 import "this" Std.TypeError
-import "this" Std.Cat
 
 
 type family Length (l :: [k]) :: Nat where
@@ -63,9 +61,6 @@ type family (===) (a :: k0) (b :: k1) :: Bool where
 
 class (==) a b where eq :: a :~: b
 instance (a ~ b) => (==) a b where eq = Refl
-
-same :: forall a b. a == b => a <-> b
-same = case eq @a @b of Refl -> id
 
 type family Concat a b where
     Concat '[] l = l

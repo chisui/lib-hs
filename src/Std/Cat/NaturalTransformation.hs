@@ -4,7 +4,6 @@ import "this" Std.Cat.Class
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.Product
-import "this" Std.Cat.Associative
 import "this" Std.Cat.Bifunctor
 import "this" Std.Constraint
 
@@ -27,22 +26,18 @@ instance Category cat => Category (NT cat)
 instance Cartesian (~>) where
     type Product (~>) = Product1
     NT f &&& NT g = NT (Prod1 . (f &&& g))
-    fst = NT (fst . prod1)
-    snd = NT (snd . prod1)
+    fst = NT (fst . unProd1)
+    snd = NT (snd . unProd1)
 
 instance Cocartesian (~>) where
     type Coproduct (~>) = Coproduct1
     lft = NT (Prod1 . lft)
     rght = NT (Prod1 . rght)
-    NT f ||| NT g = NT ((f ||| g) . prod1)
-
-instance CatAssociative HASK f => CatAssociative (~>) (Prod1 f) where
-    assoc = NT (Prod1 . assoc . prod1)
-
+    NT f ||| NT g = NT ((f ||| g) . unProd1)
 
 instance EndoLeftFunctor Unconstraint HASK f => CatLeftFunctor Unconstraint (~>) (~>) (Prod1 f) where
-    left (NT f) = NT (Prod1 . left f . prod1)
+    left (NT f) = NT (liftProd1 (left f))
 instance EndoRightFunctor Unconstraint HASK f => CatRightFunctor Unconstraint (~>) (~>) (Prod1 f) where
-    right (NT f) = NT (Prod1 . right f . prod1)
+    right (NT f) = NT (liftProd1 (right f))
 instance EndoBifunctor Unconstraint HASK f => CatBifunctor Unconstraint (~>) (~>) (~>) (Prod1 f) where
-    catBimap (NT f) (NT g) = NT (Prod1 . catBimap f g . prod1)
+    catBimap (NT f) (NT g) = NT (liftProd1 (catBimap f g))

@@ -15,12 +15,17 @@ type EndoLeftFunctor c0 cat = CatLeftFunctor c0 cat cat
 type LeftFunctor' c = EndoLeftFunctor c HASK
 type LeftFunctor = LeftFunctor' Unconstraint
 
+leftEndo :: CatLeftFunctor c0 cat cat p => (c0 a, c0 b, c0 c) => a `cat` b -> p a c `cat` p b c
+leftEndo = left
+
 class (Category s, Category t) => CatRightFunctor c0 s t q | s t q -> c0 where
     right :: (c0 a, c0 b, c0 c) => s a b -> t (q c a) (q c b)
 type EndoRightFunctor c0 cat = CatRightFunctor c0 cat cat
 type RightFunctor' c = EndoRightFunctor c HASK
 type RightFunctor = RightFunctor' Unconstraint
 
+rightEndo :: CatRightFunctor c0 cat cat p => (c0 a, c0 b, c0 c) => a `cat` b -> p c a `cat` p c b
+rightEndo = right
 
 class (CatLeftFunctor c0 r t p, CatRightFunctor c0 s t p) => CatBifunctor c0 r s t p | r s t p -> c0 where
     catBimap, (***) :: (c0 a, c0 b, c0 c, c0 d) => a `r` b -> c `s` d -> (a `p` c) `t` (b `p` d)

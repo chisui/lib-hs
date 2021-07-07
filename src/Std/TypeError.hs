@@ -7,7 +7,7 @@ module Std.TypeError
 import "base" GHC.TypeLits ( TypeError, ErrorMessage(..) )
 
 import "this" Std.Quote
-import "this" Std.Cat ( (.) )
+import "this" Std.Cat.Class ( (.) )
 
 
 typeError :: QuasiQuoter

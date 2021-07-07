@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Std.Ord
-    ( Eq(..), (==), (/=)
+    ( Eq(..), (==), (==!), (/=)
     , Ord(..), compare, (<), (<=), (>), (>=), max, min
     , Res(..), Totallity(..), Bool(..)
     , Unordered(..)
@@ -27,6 +27,8 @@ class Eq (t :: Totallity) a | a -> t where
     a ==? b = not <$> (a /=? b)
     a /=? b = not <$> (a ==? b)
 
+(==!) :: forall a t. Eq t a => a -> a -> Bool
+a ==! b = fromRes False (a ==? b)
 (==), (/=) :: forall a. Eq 'Total a => a -> a -> Bool
 a == b = total (a ==? b)
 a /= b = total (a /=? b)
@@ -82,11 +84,11 @@ class Eq t a => Ord (t :: Totallity) a | a -> t where
     (<?), (<=?), (>?), (>=?) :: a -> a -> Res t Bool
     max', min'               :: a -> a -> Res t a
 
-    compare' x y = if fromRes False (x ==? y) then pure EQ
+    compare' x y = if x ==! y then pure EQ
                   -- NB: must be '<=' not '<' to validate the
                   -- above claim about the minimal things that
                   -- can be defined for an instance of Ord:
-                  else map (bool LT GT) (x <=? y)
+                  else bool LT GT <$> (x <=? y)
 
     x <?  y = (== LT) <$> compare' x y
     x <=? y = (/= GT) <$> compare' x y

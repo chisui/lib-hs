@@ -5,13 +5,17 @@ import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
-import "this" Std.Cat.Associative
 import "this" Std.Cat.Bifunctor
 
 
 newtype Dual cat a b = Dual
     { unDual :: b `cat` a
     }
+
+
+liftDual :: (a `cat` b -> a' `cat` b')
+        -> Dual cat b a -> Dual cat b' a'
+liftDual f (Dual a) = Dual (f a)
 
 instance Semigroupoid cat => Semigroupoid (Dual cat) where
     Dual g . Dual f = Dual (f . g)
@@ -43,7 +47,3 @@ instance Cartesian cat => Cocartesian (Dual cat) where
     rght = Dual snd
     fuse = Dual copy
     Dual f ||| Dual g = Dual (f &&& g)
-
-
-instance CatAssociative cat f => CatAssociative (Dual cat) f where
-    assoc = Dual assoc

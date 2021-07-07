@@ -14,17 +14,17 @@ import "this" Std.Cat.Bifunctor
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.NaturalTransformation
-import "this" Std.Cat.Associative
+import "this" Std.Cat.Commutative
 import "this" Std.Cat.Dual
 import "this" Std.Cat.Product
 
 
-class CatAssociative cat f => CatMonoidal (cat :: k -> k -> Type) (f :: k -> k -> k) where
+class CatCommutative cat f => CatMonoidal (cat :: k -> k -> Type) (f :: k -> k -> k) where
     type Id cat f :: k
     idl :: Iso cat (Id cat f `f` a) a
-    idl = (to idr . assoc) :<-> (assoc . from idr)
+    idl = (to idr . commute) :<-> (commute . from idr)
     idr :: Iso cat (a `f` Id cat f) a
-    idr = (to idl . assoc) :<-> (assoc . from idl)
+    idr = (to idl . commute) :<-> (commute . from idl)
     {-# MINIMAL idl | idr #-}
 
 instance CatMonoidal cat f => CatMonoidal (Dual cat) f where
@@ -33,11 +33,11 @@ instance CatMonoidal cat f => CatMonoidal (Dual cat) f where
 
 instance CatMonoidal cat f => CatMonoidal (Iso cat) f where
     type Id (Iso cat) f = Id cat f
-    idl = idl :<-> assoc idl
+    idl = idl :<-> commute idl
 
 instance (LeftFunctor f, CatMonoidal HASK f) => CatMonoidal (~>) (Prod1 f) where
     type Id (~>) (Prod1 f) = Const (Id HASK f)
-    idl = NT (to idl . left getConst . prod1)
+    idl = NT (to idl . left getConst . unProd1)
      :<-> NT (Prod1 . left Const . from idl)
 
 instance CatMonoidal HASK (,) where

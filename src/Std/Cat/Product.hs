@@ -11,10 +11,13 @@ import "this" Std.Constraint
 
 
 newtype Prod1 p f g a = Prod1
-    { prod1 :: f a `p` g a
+    { unProd1 :: f a `p` g a
     }
 type Product1 = Prod1 (,)
 type Coproduct1 = Prod1 Either
+
+liftProd1 :: (f a `p` g a -> f' a' `p'` g' a') -> Prod1 p f g a -> Prod1 p' f' g' a'
+liftProd1 f = Prod1 . f . unProd1
 
 
 instance ( EndoFunctor c f

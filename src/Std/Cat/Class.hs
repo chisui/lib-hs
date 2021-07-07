@@ -12,14 +12,14 @@ type HASK = (->)
 
 class Semigroupoid cat where
     (.) :: b `cat` c -> a `cat` b -> a `cat` c
-
+infixr 9 .
 
 class CatId cat where
     id :: cat a a
 
 ($) :: CatId cat => a `cat` a
 ($) = id
-
+infixr 0 $
 
 class (Semigroupoid cat, CatId cat) => Category cat
 

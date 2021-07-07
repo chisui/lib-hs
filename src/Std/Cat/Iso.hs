@@ -3,7 +3,7 @@
 module Std.Cat.Iso
     ( Iso(..), type (<->), type (<~>)
     , liftIso
-    , coerce, coproduct, product, dual
+    , coerce, coproduct, product, dual, same
     ) where
 
 import "base" Data.Coerce qualified as Base
@@ -14,8 +14,8 @@ import "this" Std.Cat.Bifunctor
 import "this" Std.Cat.NaturalTransformation
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
-import "this" Std.Cat.Associative
 import "this" Std.Cat.Dual
+import "this" Std.Type
 
 
 data Iso cat a b = (:<->)
@@ -54,13 +54,14 @@ coproduct l r f = f :<-> l ||| r
 dual :: a `cat` b <-> Dual cat b a
 dual = coerce
 
+same :: forall a b. a == b => a <-> b
+same = case eq @a @b of Refl -> id
+
 
 instance   Semigroupoid cat   => Semigroupoid        (Iso cat)   where f . g = to f . to g :<-> from g . from f
 instance          CatId cat   => CatId               (Iso cat)   where id = id :<-> id
 instance       Category cat   => Category            (Iso cat)
 instance       Category cat   => Groupoid            (Iso cat)   where invCat f = from f :<-> to f
-instance CatAssociative cat f => CatAssociative      (Iso cat) f where assoc = assoc :<-> assoc
-instance       Category cat   => CatAssociative HASK (Iso cat)   where assoc = invCat
 
 instance      EndoFunctor   cat f => CatFunctor        (Iso cat) (Iso cat) f where map   = liftIso map   map
 instance  EndoLeftFunctor c cat f => CatLeftFunctor  c (Iso cat) (Iso cat) f where left  = liftIso left  left

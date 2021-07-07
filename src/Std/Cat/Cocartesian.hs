@@ -21,9 +21,6 @@ class EndoBifunctor Unconstraint cat (Coproduct cat) => Cocartesian (cat :: k ->
     f ||| g = fuse . catBimap f g
     {-# MINIMAL lft, rght, (fuse | (|||)) #-}
 
-assocCoprod :: Cocartesian cat => Coproduct cat a b `cat` Coproduct cat b a
-assocCoprod = rght ||| lft
-
 instance Cocartesian HASK where
     type Coproduct HASK = Either
     lft = Left

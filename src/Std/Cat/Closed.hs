@@ -2,7 +2,7 @@ module Std.Cat.Closed where
 
 import "this" Std.Cat.Class
 import "this" Std.Cat.Cartesian
-import "this" Std.Cat.Associative
+import "this" Std.Cat.Commutative
 import "this" Std.Cat.Bifunctor
 
 
@@ -15,8 +15,8 @@ class Cartesian cat => Closed cat where
 const :: Closed cat => a `cat` Exp cat b a
 const = curry fst
 
-flip :: (Closed cat, CatAssociative cat (Product cat)) => b `cat` Exp cat a c -> a `cat` Exp cat b c
-flip f = curry (uncurry f . assoc)
+flip :: (Closed cat, CatCommutative cat (Product cat)) => b `cat` Exp cat a c -> a `cat` Exp cat b c
+flip f = curry (uncurry f . commute)
 
 on' :: Closed cat => a `cat` Exp cat b c -> a' `cat` a -> b' `cat` b -> a' `cat` Exp cat b' c
 on' f g h = curry (uncurry f . (g *** h))

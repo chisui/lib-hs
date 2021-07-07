@@ -20,9 +20,6 @@ class EndoBifunctor Unconstraint cat (Product cat) => Cartesian (cat :: k -> k -
     f &&& g = catBimap f g . copy
     {-# MINIMAL fst, snd, (copy | (&&&)) #-}
 
-assocProd :: Cartesian cat => Product cat a b `cat` Product cat b a
-assocProd = snd &&& fst
-
 instance Cartesian HASK where
     type Product HASK = (,)
     fst (a, _) = a
