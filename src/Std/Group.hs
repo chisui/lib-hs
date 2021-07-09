@@ -37,8 +37,8 @@ class Magma op a => Lower (op :: k) a where
     bot# _ = bot (Proxy @op)
     {-# MINIMAL bot | bot# #-}
 
-class    IdentityOp op a => UnitalMagma op a
-instance IdentityOp op a => UnitalMagma op a
+class    (Magma op a, IdentityOp op a) => UnitalMagma op a
+instance (Magma op a, IdentityOp op a) => UnitalMagma op a
 
 class    AssociativeOp op a => Semigroup op a
 instance AssociativeOp op a => Semigroup op a
