@@ -8,8 +8,9 @@ import "base" Text.Show ( Show )
 import "base" GHC.Int ( Int )
 import "base" Data.Char ( Char )
 
-import "this" Std.Group
 import "this" Std.Literal
+import "this" Std.BinOp
+import "this" Std.Group
 import "this" Std.Ord
 import "this" Std.Cat
 
@@ -25,7 +26,7 @@ instance HasItems (FreeGroup a) where
 instance Eq a => FromList (FreeGroup a) where
     fromList = normalizeFreeGroup . FreeGroup . map (,1)
 
-instance Eq a => BinOp 'Total 'Add (FreeGroup a) where
+instance Eq a => BinOp 'Add (FreeGroup a) where
     op# _ (FreeGroup a0) (FreeGroup b0) = FreeGroup (op' (reverse a0) b0)
       where
         op' ((a, na) : as) ((b, nb) : bs) 
@@ -36,8 +37,9 @@ instance Eq a => BinOp 'Total 'Add (FreeGroup a) where
 instance Eq a => IdentityOp 'Add (FreeGroup a) where
     identity# _ = FreeGroup []
 instance Eq a => AssociativeOp 'Add (FreeGroup a)
-instance Eq a => Invertible 'Total 'Add (FreeGroup a) where
+instance Eq a => InvertibleOp 'Add (FreeGroup a) where
     inv# p = FreeGroup . map (right (inv# p)) . unFreeGroup
+    invOp# p a b = a + inv#p b
 
 instance CatFunctor HASK HASK FreeGroup where
     catMap :: forall a b. (a -> b) -> FreeGroup a -> FreeGroup b

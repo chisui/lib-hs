@@ -68,6 +68,15 @@ instance CatJoin HASK (Res t) where
 instance CatApplicative HASK (Res t)
 instance CatMonad HASK (Res t)
 
+instance CatEmpty HASK (Res 'Partial) where
+    catEmpty _ = EmptyRes
+instance CatCombine HASK (Res t) where
+    EmptyRes <> r = r
+    r <> _ = r
+instance CatAlternative HASK (Res 'Partial)
+
+instance CatMonadFail HASK (Res 'Partial) where
+    fail _ = empty
 
 fromRes :: a -> Res t a -> a
 fromRes _ (FullRes a) = a

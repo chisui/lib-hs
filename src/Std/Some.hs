@@ -17,7 +17,7 @@ import "this" Std.Debug
 import "this" Std.Literal
 import "this" Std.Cat
 import "this" Std.Ord
-import "this" Std.Group
+import "this" Std.BinOp
 
 
 data Some c where

@@ -10,6 +10,7 @@ import "this" Std.HList
 import "this" Std.Type
 import "this" Std.Singleton
 import "this" Std.Debug
+import "this" Std.BinOp
 import "this" Std.Group
 import "this" Std.Ord
 import "this" Std.Literal
@@ -54,12 +55,10 @@ instance CatLift2 HASK (Vec n) where
 
 instance Pure (Vec n) => CatApplicative HASK (Vec n)
 
-instance (Known n, Magma op a) => BinOp 'Total op (Vec n a) where
+instance (Known n, Magma op a) => BinOp op (Vec n a) where
     op# p = lift2 (op# p)
-instance (Known n, IdentityOp op a) => IdentityOp op (Vec n a) where
-    identity# p = pure (identity# p)
-instance (Known n, Invertible 'Total op a) => Invertible 'Total op (Vec n a) where
-    inv# p = map (inv# p)
+instance (Known n, Magma op a, IdentityOp op a) => IdentityOp op (Vec n a) where
+    identity# p = identity# p
 instance (Known n, AssociativeOp op a) => AssociativeOp op (Vec n a)
 instance (Known n, Idempotent op a) => Idempotent op (Vec n a)
 instance (Known n, Commutative op a) => Commutative op (Vec n a)
@@ -67,6 +66,3 @@ instance (Known n, Upper op a) => Upper op (Vec n a) where
     top# p = pure (top# p)
 instance (Known n, Lower op a) => Lower op (Vec n a) where
     bot# p = pure (bot# p)
-instance (Known n, IntegralOp op a) => IntegralOp op (Vec n a) where
-    div# p = lift2 (div# p)
-    mod# p = lift2 (mod# p)

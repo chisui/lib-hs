@@ -28,7 +28,7 @@ import "this" Std.IfThenElse
 import "this" Std.Bool
 import "this" Std.Singleton
 import "this" Std.Cat
-import "this" Std.Group
+import "this" Std.BinOp
 import "this" Std.Ord
 import "this" Std.Partial
 import "this" Std.Literal
