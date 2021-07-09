@@ -1,0 +1,56 @@
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE UndecidableInstances #-}
+module Std.FreeGroup where
+
+import "base" Data.List ( reverse, foldr )
+import "base" Text.Show ( Show )
+import "base" GHC.Int ( Int )
+import "base" Data.Char ( Char )
+
+import "this" Std.Group
+import "this" Std.Literal
+import "this" Std.Ord
+import "this" Std.Cat hiding ( Associative )
+
+
+newtype FreeGroup a = FreeGroup
+    { unFreeGroup :: [(a, Int)]
+    }
+  deriving (Show)
+instance FromString (FreeGroup Char) where
+    fromString = fromList
+instance HasItems (FreeGroup a) where
+    type Item (FreeGroup a) = a
+instance Eq 'Total a => FromList (FreeGroup a) where
+    fromList = normalizeFreeGroup . FreeGroup . map (,1)
+
+instance Eq 'Total a => BinOp 'Add (FreeGroup a) (FreeGroup a) where
+    op# _ (FreeGroup a0) (FreeGroup b0) = FreeGroup (op' (reverse a0) b0)
+      where
+        op' ((a, na) : as) ((b, nb) : bs) 
+            | a == b = op' ((a, na + nb) : as) bs
+        op' ((_, 0) : as) bs = op' as bs
+        op' as ((_, 0) : bs) = op' as bs
+        op' v w = reverse v + w
+instance Eq 'Total a => Magma 'Add (FreeGroup a)
+instance Eq 'Total a => IdentityOp 'Add (FreeGroup a) where
+    identity# _ = FreeGroup []
+instance Eq 'Total a => Associative 'Add (FreeGroup a)
+instance Eq 'Total a => Invertible 'Add (FreeGroup a) where
+    inv# p = FreeGroup . map (right (inv# p)) . unFreeGroup
+instance Eq 'Total a => Eq 'Total (FreeGroup a) where
+    (==?) = to coerce ((==?) @_ @[(a, Int)])
+
+instance CatFunctor HASK HASK FreeGroup where
+    catMap :: forall a b. (a -> b) -> FreeGroup a -> FreeGroup b
+    catMap = to coerce ((map . left) :: (a -> b) -> [(a, Int)] -> [(b, Int)])
+
+normalizeFreeGroup :: forall a. Eq 'Total a => FreeGroup a -> FreeGroup a
+normalizeFreeGroup = FreeGroup . foldr go [] . unFreeGroup
+  where
+    go :: (a, Int) -> [(a, Int)] -> [(a, Int)]
+    go a [] = [a]
+    go (b, nb) ((a, na) : as) 
+        | a == b = (a, na + nb) : as
+    go a as = a : as

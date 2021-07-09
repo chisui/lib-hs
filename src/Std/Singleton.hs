@@ -9,14 +9,12 @@ module Std.Singleton
     , SomeSingleton(..), unwrapSomeSingleton
     ) where
 
-import "base" Data.Proxy ( Proxy(..) )
 import "base" Prelude qualified as Base
 import "base" GHC.TypeLits
 
-import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
-
 import "this" Std.Partial
 import "this" Std.Cat
+import "this" Std.Type
 
 
 liftProxy :: Proxy# a -> Proxy a
@@ -70,7 +68,7 @@ instance Singleton k => Singleton [k] where
 instance Singleton [k] => Known ('[] :: [k]) where
     val _ = []
     val# _ = []
-instance (Known a, Known as) => Known (a ': as) where
+instance (Known <$> (a ': as), Known a, Known as) => Known (a ': as) where
     val _ = val' @a : val' @as
     val# _ = val' @a : val' @as
 

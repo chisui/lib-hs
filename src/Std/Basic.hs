@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Std.Basic
-    ( Basic(..), Basic1(..)
+    ( Basic(..), Basic1(..), Basic2(..)
     , Unsafe(..), Unsafe1(..)
     , Monoidal(..)
     , Numeric(..), PartialNumeric(..)

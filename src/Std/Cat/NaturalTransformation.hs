@@ -5,7 +5,7 @@ import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.Product
 import "this" Std.Cat.Bifunctor
-import "this" Std.Constraint
+import "this" Std.Type
 
 
 newtype NT cat f g = NT
@@ -17,8 +17,7 @@ type (~>) = NT HASK
 
 instance Semigroupoid cat => Semigroupoid (NT cat) where
     NT f . NT g = NT (f . g)
-instance CatId cat => CatId (NT cat) where
-    id = NT id
+instance CatId cat => CatId (NT cat) where id = NT id
 instance Category cat => Category (NT cat)
 
 
@@ -35,9 +34,9 @@ instance Cocartesian (~>) where
     rght = NT (Prod1 . rght)
     NT f ||| NT g = NT ((f ||| g) . unProd1)
 
-instance EndoLeftFunctor Unconstraint HASK f => CatLeftFunctor Unconstraint (~>) (~>) (Prod1 f) where
-    left (NT f) = NT (liftProd1 (left f))
-instance EndoRightFunctor Unconstraint HASK f => CatRightFunctor Unconstraint (~>) (~>) (Prod1 f) where
-    right (NT f) = NT (liftProd1 (right f))
-instance EndoBifunctor Unconstraint HASK f => CatBifunctor Unconstraint (~>) (~>) (~>) (Prod1 f) where
-    catBimap (NT f) (NT g) = NT (liftProd1 (catBimap f g))
+instance EndoLeftFunctor HASK f => CatLeftFunctor' Unconstrained (~>) (~>) (Prod1 f) where
+    left' (NT f) = NT (liftProd1 (left f))
+instance EndoRightFunctor HASK f => CatRightFunctor' Unconstrained (~>) (~>) (Prod1 f) where
+    right' (NT f) = NT (liftProd1 (right f))
+instance EndoBifunctor HASK f => CatBifunctor' Unconstrained (~>) (~>) (~>) (Prod1 f) where
+    catBimap' (NT f) (NT g) = NT (liftProd1 (catBimap f g))

@@ -15,7 +15,7 @@ import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.NaturalTransformation
 import "this" Std.Cat.Commutative
-import "this" Std.Cat.Dual
+import "this" Std.Cat.Op
 import "this" Std.Cat.Product
 
 
@@ -27,9 +27,9 @@ class CatCommutative cat f => CatMonoidal (cat :: k -> k -> Type) (f :: k -> k -
     idr = (to idl . commute) :<-> (commute . from idl)
     {-# MINIMAL idl | idr #-}
 
-instance CatMonoidal cat f => CatMonoidal (Dual cat) f where
-    type Id (Dual cat) f = Id cat f
-    idl = Dual (from idl) :<-> Dual (to idl)
+instance CatMonoidal cat f => CatMonoidal (Op cat) f where
+    type Id (Op cat) f = Id cat f
+    idl = Op (from idl) :<-> Op (to idl)
 
 instance CatMonoidal cat f => CatMonoidal (Iso cat) f where
     type Id (Iso cat) f = Id cat f

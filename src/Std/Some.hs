@@ -5,6 +5,7 @@ module Std.Some
     , use, useT, use2, useT2
     , castSome, narrowSome
     , type (==>), Castable
+    , Dynamic
     ) where
 
 import "base" Prelude ( Maybe(..) )
@@ -42,6 +43,8 @@ type (==>) (c0 :: k -> Constraint) (c1 :: k -> Constraint) = (forall x. c0 x => 
 class Typeable a => Castable a
 instance Typeable a => Castable a
 
+type Dynamic = Some Castable
+
 castSome :: (Castable a, c ==> Castable) => Some c -> Maybe a
 castSome = use cast
 
@@ -61,3 +64,6 @@ instance (Typeable c, c ==> Exception) => Exception (Some c) where
     toException = use toException
     displayException = use show
     fromException (SomeException e) = cast e
+
+instance CatFunctor (~>) (->) (SomeT c) where
+    catMap (NT f) (SomeT a) = SomeT (f a)

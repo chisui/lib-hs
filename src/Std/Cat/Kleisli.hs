@@ -2,87 +2,72 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Cat.Kleisli where
 
-import "base" Data.Coerce
-
 import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
+import "this" Std.Cat.Bifunctor
 import "this" Std.Cat.Applicative
 import "this" Std.Cat.Monad
-import "this" Std.Cat.MonadFail
-import "this" Std.Cat.Bifunctor
 import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Closed
 import "this" Std.Cat.Distributive
 import "this" Std.Cat.Associative
-import "this" Std.Constraint
+import "this" Std.Cat.Op
+import "this" Std.Cat.Arrow
+import "this" Std.Cat.Iso
 
 
 newtype CatKleisli cat m a b = Kleisli
-    { kleisli :: a `cat` m b
+    { unKleisli :: a `cat` m b
     }
 type Kleisli = CatKleisli HASK
+type CatCokleisli cat = CatKleisli (Op cat)
+type Cokleisli = CatCokleisli HASK
 
+instance CatIsomorphic HASK (CatKleisli cat m a b) (a `cat` m b) where catIso = coerce
+
+liftKleisli :: (a `cat` m b -> a' `cat'` m' b') -> CatKleisli cat m a b -> CatKleisli cat' m' a' b'
+liftKleisli f = Kleisli . f . unKleisli
+
+
+instance CatMonad cat m => CatArrow HASK cat (CatKleisli cat m) where
+    catArr f = Kleisli (catPure . f)
 
 instance (CatMonad cat m, Semigroupoid cat) => Semigroupoid (CatKleisli cat m) where
     (.) :: forall a b c. CatKleisli cat m b c -> CatKleisli cat m a b -> CatKleisli cat m a c
-    (.) = coerce ((<=<) :: b `cat` m c -> a `cat` m b -> a `cat` m c)
+    (.) = to coerce ((<=<) :: b `cat` m c -> a `cat` m b -> a `cat` m c)
 instance (CatPure cat m, CatId cat) => CatId (CatKleisli cat m) where
     id :: forall a. CatKleisli cat m a a
-    id = coerce (catPure :: a `cat` m a)
+    id = to coerce (catPure :: a `cat` m a)
 instance (CatMonad cat m, Category cat) => Category (CatKleisli cat m)
 
 
 instance ( CatMonad cat m
          , Cartesian cat
-         , EndoBifunctor Unconstraint (CatKleisli cat m) (Product cat)
+         , EndoBifunctor (CatKleisli cat m) (Product cat)
          ) => Cartesian (CatKleisli cat m) where
     type Product (CatKleisli cat m) = Product cat
-    fst = Kleisli (catPure . fst)
-    snd = Kleisli (catPure . snd)
-    copy = Kleisli (catPure . copy)
+    fst  = arr @cat fst
+    snd  = arr @cat snd
+    copy = arr @cat copy
 
 instance ( CatMonad cat m
          , Cocartesian cat
-         , EndoBifunctor Unconstraint (CatKleisli cat m) (Coproduct cat)
+         , EndoBifunctor (CatKleisli cat m) (Coproduct cat)
          ) => Cocartesian (CatKleisli cat m) where
     type Coproduct (CatKleisli cat m) = Coproduct cat
-    lft = Kleisli (catPure . lft)
-    rght = Kleisli (catPure . rght)
-    fuse = Kleisli (catPure . fuse)
+    lft  = arr @cat lft
+    rght = arr @cat rght
+    fuse = arr @cat fuse
 
-instance ( Monad m
-         , Distributive m
-         ) => Closed (Kleisli m) where
+instance Distributive m => Closed (Kleisli m) where
     type Exp (Kleisli m) = Kleisli m
-    apply :: Kleisli m (Kleisli m a b, a) b
-    apply = Kleisli (uncurry kleisli)
-    curry (Kleisli f) = Kleisli (catPure . Kleisli . curry f)
-    uncurry (Kleisli f) = Kleisli $ \(a, b) -> app ( (,b) <$> f a)  --(uncurry ((. flip kleisli) . (>>=) . f))
-      where
-        app :: m (Kleisli m a b, a) -> m b
-        app m = do 
-            (Kleisli g, b) <- m
-            g b
+    apply   = Kleisli (uncurry unKleisli)
+    curry   = liftKleisli $ \f -> catPure . Kleisli . curry f
+    uncurry = liftKleisli $ \f (a, b) -> ($ b) . unKleisli =<< f a
 
-
-instance ( CatAssociative HASK f
-         , EndoLeftFunctor Unconstraint HASK f
-         , CatDistributive HASK m
-         , CatMonad HASK m
-         , EndoFunctor HASK m
-         ) => CatLeftFunctor Unconstraint (CatKleisli HASK m) (CatKleisli HASK m) f where
-    left (Kleisli f) = Kleisli (map unLeft . distribute . map f . MkLeft)
-instance ( CatAssociative HASK f
-         , EndoRightFunctor Unconstraint HASK f
-         , CatDistributive HASK m
-         , CatMonad HASK m
-         ) => CatRightFunctor Unconstraint (CatKleisli HASK m) (CatKleisli HASK m) f where
-    right (Kleisli f) = Kleisli (map unRight . distribute . map f . MkRight)
-instance ( CatAssociative HASK f
-         , CatDistributive HASK m
-         , EndoLeftFunctor Unconstraint HASK f
-         , EndoRightFunctor Unconstraint HASK f
-         , EndoBifunctor Unconstraint HASK f
-         , CatMonad HASK m
-         ) => CatBifunctor Unconstraint (CatKleisli HASK m) (CatKleisli HASK m) (CatKleisli HASK m) f
+instance (Associative f, LeftFunctor' c f, Distributive m) => CatLeftFunctor' c (Kleisli m) (Kleisli m) f where
+    left' = liftKleisli $ \f -> map unLeft . distribute . map f . MkLeft
+instance (Associative f, Distributive m, RightFunctor' c f) => CatRightFunctor' c (Kleisli m) (Kleisli m) f where
+    right' = liftKleisli $ \f -> map unRight . distribute . map f . MkRight
+instance (Associative f, Distributive m, Bifunctor' c f) => CatBifunctor' c (Kleisli m) (Kleisli m) (Kleisli m) f

@@ -4,10 +4,9 @@ import "base" Data.Kind
 
 import "this" Std.Cat.Class
 import "this" Std.Cat.Bifunctor
-import "this" Std.Constraint
 
 
-class EndoBifunctor Unconstraint cat (Product cat) => Cartesian (cat :: k -> k -> Type) where
+class (Category cat, EndoBifunctor cat (Product cat)) => Cartesian (cat :: k -> k -> Type) where
     type Product cat :: k -> k -> k
     fst :: Product cat a b `cat` a
     snd :: Product cat a b `cat` b

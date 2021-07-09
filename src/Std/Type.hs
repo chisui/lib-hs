@@ -1,13 +1,16 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Type
     ( module Exp
-    , ElemIndex
+    , Unconstrained
+    , ElemIndex, ElemIndices
+    , Element, type (:<)
     , Map
     , type (!)
-    , AllImplement
+    , AllImplement, type (<$>)
     , type (==)(..)
     , type (===)
     , Concat
@@ -26,6 +29,9 @@ import "ghc-prim" GHC.Prim as Exp ( proxy#, Proxy# )
 import "this" Std.TypeError
 
 
+class Unconstrained (a :: k)
+instance Unconstrained a
+
 type family Length (l :: [k]) :: Nat where
     Length '[] = 0
     Length (a ': as) = Length as + 1
@@ -33,6 +39,18 @@ type family Length (l :: [k]) :: Nat where
 type family (!) (l :: [k]) (i :: Nat) :: k where
     (a ': _) ! 0 = a
     (_ ': as) ! n = as ! (n - 1)
+
+
+class (KnownNat (ElemIndex t l), l ! ElemIndex t l ~ t) => Element l t
+instance (KnownNat (ElemIndex t l), l ! ElemIndex t l ~ t) => Element l t
+
+type (t :< l) = Element l t
+infixr 5 :<
+
+type family ElemIndices a b where
+    ElemIndices '[] _ = '[]
+    ElemIndices (a ': as) b = ElemIndex a b ': ElemIndices as b
+
 
 type ElemIndex (t :: k) (l :: [k]) = ElemIndex' t l 0 l
 
@@ -47,6 +65,9 @@ type family ElemIndex' (t :: k) (orig :: [k]) (i :: Nat) (l :: [k]) :: Nat where
 type family Map (f :: k -> k1) (l :: [k]) = (l' :: [k1]) where
     Map _ '[] = '[]
     Map f (a ': as) = f a ': Map f as
+
+class AllImplement l c => (<$>) c l
+instance AllImplement l c => (<$>) c l
 
 type family AllImplement (l :: [k]) (c :: k -> Constraint) :: Constraint where
     AllImplement '[] _ = ()

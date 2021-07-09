@@ -1,6 +1,4 @@
-module Std.Cat.Compose
-    ( type (.)(..)
-    ) where
+module Std.Cat.Compose where
 
 import "base" GHC.Generics ( Generic )
 import "base" Data.Kind
@@ -18,9 +16,15 @@ newtype (.) (f :: k0 -> Type) (g :: k -> k0) (a :: k) = Compose
     }
   deriving Generic
 
+instance CatIsomorphic HASK ((f . g) a) (f (g a)) where
+    catIso = runCompose :<-> Compose
+
+liftCompose :: (f (g a) -> f' (g' a')) -> (f . g) a -> (f' . g') a'
+liftCompose f = Compose . f . runCompose
+
 instance (Functor f, Functor g) => CatFunctor HASK HASK (f . g) where
-    map :: forall a b. (a -> b) -> (f . g) a -> (f . g) b
-    map = to coerce (mapEndo . mapEndo :: (a -> b) -> f (g a) -> f (g b))
+    catMap :: forall a b. (a -> b) -> (f . g) a -> (f . g) b
+    catMap = to coerce (mapEndo . mapEndo :: (a -> b) -> f (g a) -> f (g b))
 
 instance (Pure f, Pure g) => CatPure HASK (f . g) where
     catPure :: forall a. a -> (f . g) a
@@ -36,6 +40,6 @@ instance (Applicative f, Applicative g) => CatLift2 HASK (f . g) where
 instance (Applicative f, Applicative g) => CatApplicative HASK (f . g)
 
 
-instance CatLeftFunctor  Functor (~>) (~>) (.) where left  f = NT (Compose .      eta f  . runCompose)
-instance CatRightFunctor Functor (~>) (~>) (.) where right f = NT (Compose . map (eta f) . runCompose)
-instance CatBifunctor    Functor (~>) (~>) (~>) (.)
+instance CatLeftFunctor'  Functor (~>) (~>) (.) where left'  f = NT (liftCompose         (eta f))
+instance CatRightFunctor' Functor (~>) (~>) (.) where right' f = NT (liftCompose (catMap (eta f)))
+instance CatBifunctor'    Functor (~>) (~>) (~>) (.)

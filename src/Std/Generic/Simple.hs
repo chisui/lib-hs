@@ -1,6 +1,9 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MagicHash #-}
 module Std.Generic.Simple where
+
+import "base" Data.Either
 
 import "this" Std.Generic
 import "this" Std.Union
@@ -8,6 +11,7 @@ import "this" Std.HList
 import "this" Std.Type
 import "this" Std.Cat
 import "this" Std.Ord
+import "this" Std.Tuple ()
 import "this" Std.Singleton
 
 
@@ -31,10 +35,10 @@ class SimplifyRep rep where
 
 instance SimplifyRep f => SimplifyRep (M1 a b f) where
     type SimplifyedRep (M1 a b f) = SimplifyedRep f
-    simple = simple . m1
+    simple = simple . etaIso @f
 instance SimplifyRep (K1 a b) where
     type SimplifyedRep (K1 a b) = b
-    simple = k1
+    simple = iso @b
 
 instance SimplifySumRep 'True (f :+: g) => SimplifyRep (f :+: g) where
     type SimplifyedRep (f :+: g) = Union (SimplifyedSumRep 'True (f :+: g))
@@ -58,14 +62,15 @@ instance ( SimplifySumRep (IsSum l) l, SimplifySumRep (IsSum r) r
          , (SimplifyedSumRep (IsSum r) r :<: Concat (SimplifyedSumRep (IsSum l) l) (SimplifyedSumRep (IsSum r) r))
          ) => SimplifySumRep 'True (l :+: r) where
     type SimplifyedSumRep 'True (l :+: r) = Concat (SimplifyedSumRep (IsSum l) l) (SimplifyedSumRep (IsSum r) r)
-    simpleSum _ = invCat splitUIso . catBimap l r . sumRep
+    simpleSum :: forall x. Proxy# 'True -> (l :+: r) x <-> Union (Concat (SimplifyedSumRep (IsSum l) l) (SimplifyedSumRep (IsSum r) r))
+    simpleSum _ = invCat splitUIso . (l *** r) . (iso :: (l :+: r) x <-> Either (l x) (r x))
       where
         l = simpleSum (proxy# @(IsSum l))
         r = simpleSum (proxy# @(IsSum r))
 
 instance (SimplifyRep rep, IsSum rep ~ 'False) => SimplifySumRep 'False rep where
     type SimplifyedSumRep 'False rep = '[SimplifyedRep rep]
-    simpleSum _ = singletonU . simple
+    simpleSum _ = invCat iso . simple
 
 class SimplifyPrdRep (b :: Bool) rep where
     type SimplifyedPrdRep b rep :: [Type]
@@ -80,20 +85,18 @@ instance ( SimplifyPrdRep (IsPrd l) l
          , Splittable (SimplifyedPrdRep (IsPrd l) l) (SimplifyedPrdRep (IsPrd r) r)
          ) => SimplifyPrdRep 'True (l :*: r) where
     type SimplifyedPrdRep 'True (l :*: r) = Concat (SimplifyedPrdRep (IsPrd l) l) (SimplifyedPrdRep (IsPrd r) r)
-    simplifyPrd _ = invCat splitHIso . catBimap l r . prodRep
+    simplifyPrd :: forall x. Proxy# 'True -> (l :*: r) x <-> HList (Concat (SimplifyedPrdRep (IsPrd l) l) (SimplifyedPrdRep (IsPrd r) r))
+    simplifyPrd _ = invCat splitHIso . (l *** r) . iso @(l x, r x)
       where
         l = simplifyPrd (proxy# @(IsPrd l))
         r = simplifyPrd (proxy# @(IsPrd r))
 
 instance SimplifyRep rep => SimplifyPrdRep 'False rep where
     type SimplifyedPrdRep 'False rep = '[SimplifyedRep rep]
-    simplifyPrd _ = singletonH . simple
+    simplifyPrd _ = invCat (isoThrough @(Identity (SimplifyedRep rep))) . simple
 
 type SimpleRep a = SimplifyedRep (Rep a)
-class (Generic a, SimplifyRep (Rep a)) => GenericSimple a where
-    simpleRep :: a <-> SimpleRep a
-instance (Generic a, SimplifyRep (Rep a)) => GenericSimple a where
-    simpleRep = simple . invCat rep
+class    (Generic a, SimplifyRep (Rep a)) => GenericSimple a where simpleRep :: a <-> SimpleRep a
+instance (Generic a, SimplifyRep (Rep a)) => GenericSimple a where simpleRep = simple . invCat rep
 
 type GThroughSimple c a = (GenericSimple a, c (SimpleRep a))
-

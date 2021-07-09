@@ -39,8 +39,8 @@ type (-!>) a b = a -> Res 'Total b
 type (-?>) a b = a -> Res 'Partial b
 
 instance CatFunctor HASK HASK (Res t) where
-    map f (FullRes a) = FullRes (f a)
-    map _ EmptyRes = EmptyRes
+    catMap f (FullRes a) = FullRes (f a)
+    catMap _ EmptyRes = EmptyRes
 instance CatPure HASK (Res t) where
     catPure = FullRes
 instance CatAp HASK (Res t) where

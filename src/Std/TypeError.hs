@@ -4,10 +4,10 @@ module Std.TypeError
     , typeError
     ) where
 
+import "base" Data.Function ( (.) )
 import "base" GHC.TypeLits ( TypeError, ErrorMessage(..) )
 
 import "this" Std.Quote
-import "this" Std.Cat.Class ( (.) )
 
 
 typeError :: QuasiQuoter

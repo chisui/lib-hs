@@ -1,14 +1,20 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE MagicHash #-}
 module Std.HList where
 
+import "base" GHC.Int
+
 import "this" Std.Bool
 import "this" Std.Type
 import "this" Std.Cat
+import "this" Std.Group
+import "this" Std.Literal
 import "this" Std.Ord
 import "this" Std.Partial
+import "this" Std.Union
 
 
 data HList l where
@@ -20,18 +26,22 @@ newtype HListT (l :: [k]) (f :: k -> Type) = HListT
     { unHListT :: HList (Map f l)
     }
 
-singletonH :: a <-> HList '[a]
-singletonH = invCat tuple . coerce
-
-mapToList :: forall c l b proxy. AllImplement l c => proxy c -> (forall a. c a => a -> b) -> HList l -> [b]
+mapToList :: forall c l b proxy. c <$> l => proxy c -> (forall a. c a => a -> b) -> HList l -> [b]
 mapToList _ = mapToList# (proxy# @c)
 
-mapToList# :: AllImplement l c => Proxy# c -> (forall a. c a => a -> b) -> HList l -> [b]
+mapToList# :: c <$> l => Proxy# c -> (forall a. c a => a -> b) -> HList l -> [b]
 mapToList# _ _ HNil = []
 mapToList# p f (a ::: as) = f a : mapToList# p f as
 
-toList :: forall a l. AllImplement l ((==) a) => HList l -> [a]
+toList :: forall a l. (==) a <$> l => HList l -> [a]
 toList = mapToList# (proxy# @((==) a)) (from (same @a))
+
+explodeH :: forall l. HList l -> [Union l]
+explodeH = explodeH' 0
+  where
+    explodeH' :: Int -> HList x -> [Union l]
+    explodeH' _ HNil = []
+    explodeH' n (a ::: as) = UnsafeInternalUnion n a : explodeH' (n + 1) as
 
 concatH :: forall a b. HList a -> HList b -> HList (Concat a b)
 concatH HNil l = l
@@ -75,17 +85,17 @@ splitHIso :: Splittable a b => HList (Concat a b) <-> (HList a, HList b)
 splitHIso = splitH :<-> uncurry concatH
 
 instance CatFunctor (~>) (->) (HListT '[]) where
-    map :: forall f g. f ~> g -> HListT '[] f -> HListT '[] g
-    map _ = to coerce :: HListT '[] f -> HListT '[] g
+    catMap :: forall f g. f ~> g -> HListT '[] f -> HListT '[] g
+    catMap _ = to coerce :: HListT '[] f -> HListT '[] g
 
 instance CatFunctor (~>) (->) (HListT as) => CatFunctor (~>) (->) (HListT (a ': as)) where
-    map :: forall f g. f ~> g -> HListT (a ': as) f -> HListT (a ': as) g
-    map f = to coerce map' :: HListT (a ': as) f -> HListT (a ': as) g
+    catMap :: forall f g. f ~> g -> HListT (a ': as) f -> HListT (a ': as) g
+    catMap f = to coerce map' :: HListT (a ': as) f -> HListT (a ': as) g
       where
         map' :: HList (Map f (a ': as)) -> HList (Map g (a ': as))
         map' (a ::: as) = eta f a ::: mapNext as
         mapNext :: HList (Map f as) -> HList (Map g as)
-        mapNext = to coerce (map f :: HListT as f -> HListT as g)
+        mapNext = to coerce (catMap f :: HListT as f -> HListT as g)
 
 instance Eq 'Total (HList '[]) where
     _ ==? _ = pure True
@@ -97,25 +107,3 @@ instance Ord 'Total (HList '[]) where
     compare' _ _ = pure EQ
 instance (Ord u a, Ord v (HList as), t ~ Min u v) => Ord t (HList (a ': as)) where
     compare' (a ::: as) (b ::: bs) = zipRes (&&) (compare' a b) (compare' as bs)
-
-class AsTuple (l :: [Type]) (t :: Type) | l -> t, t -> l where
-    tuple :: HList l <-> t
-
-instance AsTuple '[] () where
-    tuple = const () :<-> const HNil
-
-instance AsTuple '[a] (Identity a) where
-    tuple = (\(a ::: HNil) -> Identity a)
-       :<-> (\(Identity a) -> a ::: HNil)
-
-instance AsTuple '[a, b] (a, b) where
-    tuple = (\(a ::: b ::: HNil) -> (a, b))
-       :<-> (\(a, b) -> a ::: b ::: HNil)
-
-instance AsTuple '[a, b, c] (a, b, c) where
-    tuple = (\(a ::: b ::: c ::: HNil) -> (a, b, c))
-       :<-> (\(a, b, c) -> a ::: b ::: c ::: HNil)
-
-instance AsTuple '[a, b, c, d] (a, b, c, d) where
-    tuple = (\(a ::: b ::: c ::: d ::: HNil) -> (a, b, c, d))
-       :<-> (\(a, b, c, d) -> a ::: b ::: c ::: d ::: HNil)

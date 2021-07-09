@@ -166,6 +166,9 @@ instance (Min t t ~ t, Eq t a) => Eq t [a] where
     (a : as) ==? (b : bs) = zipRes @t @t (&&) (a ==? b) (as ==? bs)
     _ ==? _ = pure False
 
+instance (Min ta tb ~ t, Eq ta a, Eq tb b) => Eq t (a, b) where
+    (a, b) ==? (a', b') = zipRes @ta @tb (&&) (a ==? a') (b ==? b')
+
 instance (Min t t ~ t, Ord t a) => Ord t [a] where
     (a : as) `compare'` (b : bs) = zipRes @t @t (Base.<>) (a `compare'` b) (as `compare'` bs)
     [] `compare'` [] = pure EQ

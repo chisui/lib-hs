@@ -5,10 +5,9 @@ import "base" Data.Either
 
 import "this" Std.Cat.Class
 import "this" Std.Cat.Bifunctor
-import "this" Std.Constraint
 
 
-class EndoBifunctor Unconstraint cat (Coproduct cat) => Cocartesian (cat :: k -> k -> Type) where
+class EndoBifunctor cat (Coproduct cat) => Cocartesian (cat :: k -> k -> Type) where
     type Coproduct cat :: k -> k -> k
     lft  :: a `cat` Coproduct cat a b
     rght :: b `cat` Coproduct cat a b
