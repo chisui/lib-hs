@@ -41,7 +41,7 @@ type Applicative = CatApplicative HASK
 
 class CatApplicative cat f => CatAlternative cat f where
     catEmpty :: x `cat` f a 
-    (<|>) :: f a `cat` Exp cat (f a) (f a)
+    (<>) :: f a `cat` Exp cat (f a) (f a)
 type Alternative = CatAlternative HASK
 
 empty :: Alternative f => f a
@@ -65,8 +65,8 @@ instance Base.Applicative f => CatApplicative HASK (Basic1 f)
 instance Base.Alternative f => CatAlternative HASK (Basic1 f) where
     catEmpty :: forall a x. x -> Basic1 f a
     catEmpty _ = coerce (Base.empty :: f a)
-    (<|>) :: forall a. Basic1 f a -> Basic1 f a -> Basic1 f a
-    (<|>) = coerce ((Base.<|>) :: f a -> f a -> f a)
+    (<>) :: forall a. Basic1 f a -> Basic1 f a -> Basic1 f a
+    (<>) = coerce ((Base.<|>) :: f a -> f a -> f a)
 
 deriving via (Basic1 Base.Maybe) instance CatPure        HASK Base.Maybe
 deriving via (Basic1 Base.Maybe) instance CatAp          HASK Base.Maybe
@@ -88,3 +88,9 @@ deriving via (Basic1 Base.IO) instance CatPure        HASK Base.IO
 deriving via (Basic1 Base.IO) instance CatAp          HASK Base.IO
 deriving via (Basic1 Base.IO) instance CatLift2       HASK Base.IO
 deriving via (Basic1 Base.IO) instance CatApplicative HASK Base.IO
+
+deriving via (Basic1 []) instance CatPure        HASK []
+deriving via (Basic1 []) instance CatAp          HASK []
+deriving via (Basic1 []) instance CatLift2       HASK []
+deriving via (Basic1 []) instance CatApplicative HASK []
+deriving via (Basic1 []) instance CatAlternative HASK []

@@ -14,7 +14,6 @@ module Std.Group
 
 import "base" Data.Proxy
 import "base" Prelude qualified as Base
-import "base" Control.Applicative qualified as Base
 
 import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
@@ -227,15 +226,9 @@ instance Base.Semigroup a => AssociativeOp op (Monoidal a)
 instance Base.Monoid a => IdentityOp op (Monoidal a) where
     identity# _ = to coerce (Base.mempty :: a)
 
-instance Base.Alternative f => BinOp 'Total 'Add (Basic1 f a) where
-    op# _ = to coerce ((Base.<|>) :: f a -> f a -> f a)
-instance Base.Alternative f => AssociativeOp 'Add (Basic1 f a)
-instance Base.Alternative f => IdentityOp 'Add (Basic1 f a) where
-    identity# _ = to coerce (Base.empty :: f a)
-
-deriving via (Basic1 [] a) instance BinOp 'Total 'Add [a]
-deriving via (Basic1 [] a) instance AssociativeOp 'Add [a]
-deriving via (Basic1 [] a) instance IdentityOp 'Add [a]
+deriving via (Monoidal Base.String) instance BinOp 'Total 'Add Base.String
+deriving via (Monoidal Base.String) instance AssociativeOp 'Add Base.String
+deriving via (Monoidal Base.String) instance IdentityOp 'Add Base.String
 
 instance BinOp 'Total   op a => BinOp 'Total op (Res 'Total   a) where
     op# p (FullRes a) (FullRes b) = FullRes (op# p a b)

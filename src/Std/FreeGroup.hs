@@ -32,7 +32,7 @@ instance Eq a => BinOp 'Total 'Add (FreeGroup a) where
             | a == b = op' ((a, na + nb) : as) bs
         op' ((_, 0) : as) bs = op' as bs
         op' as ((_, 0) : bs) = op' as bs
-        op' v w = reverse v + w
+        op' v w = reverse v <> w
 instance Eq a => IdentityOp 'Add (FreeGroup a) where
     identity# _ = FreeGroup []
 instance Eq a => AssociativeOp 'Add (FreeGroup a)
