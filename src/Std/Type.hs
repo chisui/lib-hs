@@ -7,6 +7,7 @@ module Std.Type
     ( module Exp
     , Unconstrained
     , ElemIndex, ElemIndices
+    , Replicate
     , Element, type (:<)
     , Map
     , type (!)
@@ -33,13 +34,16 @@ class Unconstrained (a :: k)
 instance Unconstrained a
 
 type family Length (l :: [k]) :: Nat where
-    Length '[] = 0
+    Length '[]       = 0
     Length (a ': as) = Length as + 1
 
 type family (!) (l :: [k]) (i :: Nat) :: k where
-    (a ': _) ! 0 = a
+    (a ': _ ) ! 0 = a
     (_ ': as) ! n = as ! (n - 1)
 
+type family Replicate (n :: Nat) (a :: k) :: [k] where
+    Replicate 0 _ = '[]
+    Replicate n a = Replicate (n - 1) a
 
 class (KnownNat (ElemIndex t l), l ! ElemIndex t l ~ t) => Element l t
 instance (KnownNat (ElemIndex t l), l ! ElemIndex t l ~ t) => Element l t

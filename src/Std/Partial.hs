@@ -6,7 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 module Std.Partial
-    ( Totallity(..), Res(..)
+    ( Totallity(..), Res(..), DirectRes, TotalRes, PartialRes
     , Undefinable(..)
     , fromRes, toRes, total, total2
     , Min, joinRes, zipRes, zipRes3, zipRes4
@@ -28,8 +28,15 @@ data Totallity
   deriving (Show, Generic)
 
 data Res (t :: Totallity) (a :: Type) where
-    FullRes :: a -> Res t a
+    FullRes  :: a -> Res t a
     EmptyRes :: Res 'Partial a
+
+type TotalRes = Res 'Total
+type PartialRes = Res 'Partial
+
+type family DirectRes (t :: Totallity) a where
+    DirectRes 'Total   a = a
+    DirectRes 'Partial a = PartialRes a
 
 class Undefinable a where                            undefined :: Undefinable a => a
 instance Undefinable b => Undefinable (a -> b) where undefined _ = undefined

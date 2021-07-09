@@ -8,10 +8,11 @@ import "this" Std.Cat.Bifunctor
 import "this" Std.Type
 
 
-newtype NT cat f g = NT
-    { eta :: forall a. f a `cat` g a
-    }
-η :: NT cat f g -> (forall a. f a `cat` g a)
+newtype NT cat f g = NT (forall a. f a `cat` g a)
+
+eta :: forall f g cat. NT cat f g -> (forall a. f a `cat` g a)
+eta (NT f) = f
+η :: forall f g cat. NT cat f g -> (forall a. f a `cat` g a)
 η = eta
 type (~>) = NT HASK
 

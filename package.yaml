@@ -36,6 +36,7 @@ library:
   - InstanceSigs
   # deriving
   - StandaloneDeriving
+  - GeneralizedNewtypeDeriving
   - DeriveGeneric
   - DerivingVia
   # type stuff

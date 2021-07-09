@@ -164,14 +164,14 @@ instance (Show :$ l) => Show (Union l) where
         $ showString "Union "
         . applyU# (proxy# @Show) shows u
 
-instance (Eq t a) => Eq t (Union '[a]) where
-    a ==? b = decomposeLast a ==? decomposeLast b
-instance (Eq u (Union (a ': as)), Eq v b, t ~ Min u v) => Eq t (Union (b ': a ': as)) where
-    a ==? b = decompose a ==? decompose b
+instance Eq a => Eq (Union '[a]) where
+    a == b = decomposeLast a == decomposeLast b
+instance (Eq (Union (a ': as)), Eq b) => Eq (Union (b ': a ': as)) where
+    a == b = decompose a == decompose b
 
-instance (Ord t a) => Ord t (Union '[a]) where
+instance (Ord' t a) => Ord' t (Union '[a]) where
     a `compare'` b = decomposeLast a `compare'` decomposeLast b
-instance (Ord u (Union (a ': as)), Ord v b, t ~ Min u v) => Ord t (Union (b ': a ': as)) where
+instance (Ord' u (Union (a ': as)), Ord' v b, t ~ Min u v) => Ord' t (Union (b ': a ': as)) where
     a `compare'` b = decompose a `compare'` decompose b
 
 

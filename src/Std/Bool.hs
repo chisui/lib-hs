@@ -1,7 +1,8 @@
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Std.Bool
-    ( Base.Bool(..)
+    ( Bool(..)
     , BoolOp(..)
     , (&&), And
     , (||), Or
@@ -12,107 +13,109 @@ module Std.Bool
     , Base.not, Base.otherwise, Base.bool
     ) where
 
-import "base" Data.Semigroup qualified as Base
 import "base" Data.Bool qualified as Base
 import "base" Data.Bits qualified as Base
 
 import "ghc-prim" GHC.Prim ( proxy# )
 
 import "this" Std.Group
+import "this" Std.Partial
 import "this" Std.Ord
 import "this" Std.Basic
 
 
 data BoolOp
     = And
-    | Nand
     | Or
-    | Nor
     | Xor
     | Impl
+    | Nand
+    | Nor
 
-type And = BinOp 'And
+class    BinOp t 'And a => And t a
+instance BinOp t 'And a => And t a
 infixr 3 &&
-(&&) :: And a b => a -> a -> b
+(&&) :: And t a => a -> a -> DirectRes t a
 (&&) = op# (proxy# @'And)
-type Nand = BinOp 'Nand
+class    BinOp t 'Nand a => Nand t a
+instance BinOp t 'Nand a => Nand t a
 infixr 3 /&
-(/&) :: Nand a b => a -> a -> b
+(/&) :: Nand t a => a -> a -> DirectRes t a
 (/&) = op# (proxy# @'Nand)
-type Or = BinOp 'Or
+class    BinOp t 'Or a => Or t a
+instance BinOp t 'Or a => Or t a
 infixr 2 ||
-(||) :: Or a b => a -> a -> b
+(||) :: Or t a => a -> a -> DirectRes t a
 (||) = op# (proxy# @'Or)
-type Nor = BinOp 'Nor
+class    BinOp t 'Nor a => Nor t a
+instance BinOp t 'Nor a => Nor t a
 infixr 2 /|
-(/|) :: Nor a b => a -> a -> b
+(/|) :: Nor t a => a -> a -> DirectRes t a
 (/|) = op# (proxy# @'Nor)
-type Xor = BinOp 'Xor
+class    BinOp t 'Xor a => Xor t a
+instance BinOp t 'Xor a => Xor t a
 infixl 6 `xor`
-xor :: Xor a b => a -> a -> b
+xor :: Xor t a => a -> a -> DirectRes t a
 xor = op# (proxy# @'Xor)
-type Impl = BinOp 'Impl
+class    BinOp t 'Impl a => Impl t a
+instance BinOp t 'Impl a => Impl t a
 infixr 0 ==>
-(==>) :: Impl a b => a -> a -> b
+(==>) :: Impl t a => a -> a -> DirectRes t a
 (==>) = op# (proxy# @'Impl)
 
+instance BinOp 'Total 'And Bool where
+    op# _ = (Base.&&)
+instance IdentityOp 'And Bool where
+    identity# _ = True
+instance AssociativeOp 'And Bool
+instance Idempotent 'And Bool
+instance Commutative 'And Bool
+instance Invertible 'Total 'And Bool where
+    inv# _ = Base.not
+instance BinOp 'Total 'Or Bool where
+    op# _ = (Base.||)
+instance AssociativeOp 'Or Bool
+instance Idempotent 'Or Bool
+instance Commutative 'Or Bool
+instance IdentityOp 'Or Bool where
+    identity# _ = False
+instance DistributiveOp 'Or 'And Bool
+instance DistributiveOp 'And 'Or Bool
+instance Invertible 'Total 'Or Bool where
+    inv# _ = Base.not
+instance BinOp 'Total 'Xor Bool where
+    op# _ = Base.xor
+instance AssociativeOp 'Xor Bool
+instance Commutative 'Xor Bool
+instance BinOp 'Total 'Nand Bool where
+    op# _ True True = False
+    op# _ _ _ = True
+instance IdentityOp 'Nand Bool where identity# _ = False
+instance AssociativeOp 'Nand Bool
+instance Commutative 'Nand Bool
+instance BinOp 'Total 'Nor Bool where
+    op# _ False False = True 
+    op# _ _ _ = False
+instance AssociativeOp 'Nor Bool
+instance Commutative 'Nor Bool
+instance IdentityOp 'Nor Bool where
+    identity# _ = False
+instance DistributiveOp 'Nand 'Nor Bool
+instance DistributiveOp 'Nor 'Nand Bool
+instance Invertible 'Total 'Nand Bool where
+    inv# _ = Base.not
+instance Invertible 'Total 'Nor Bool where
+    inv# _ = Base.not 
 
-instance BinOp       'And Base.Bool Base.Bool where op# _ = (Base.&&)
-instance Magma       'And Base.Bool
-instance IdentityOp  'And Base.Bool where identity# _ = Base.True
-instance Associative 'And Base.Bool
-instance Idempotent  'And Base.Bool
-instance Commutative 'And Base.Bool
-instance BinOp       'Or  Base.Bool Base.Bool where op# _ = (Base.||)
-instance Magma       'Or  Base.Bool
-instance Associative 'Or  Base.Bool
-instance Idempotent  'Or  Base.Bool
-instance Commutative 'Or  Base.Bool
-instance IdentityOp  'Or  Base.Bool where identity# _ = Base.False
-instance BinOp       'Xor Base.Bool Base.Bool where op# _ = Base.xor
-instance LeftDistributive  'And 'Or Base.Bool
-instance RightDistributive 'And 'Or Base.Bool
-instance LeftDistributive  'Or 'And Base.Bool
-instance RightDistributive 'Or 'And Base.Bool
-instance BinOp       'Nand Base.Bool Base.Bool where
-    op# _ Base.True Base.True = Base.False
-    op# _ _ _ = Base.True
-instance Magma       'Nand Base.Bool
-instance IdentityOp  'Nand Base.Bool where identity# _ = Base.False
-instance Associative 'Nand Base.Bool
-instance Commutative 'Nand Base.Bool
-instance BinOp       'Nor  Base.Bool Base.Bool where
-    op# _ Base.False Base.False = Base.True 
-    op# _ _ _ = Base.False
-instance Magma       'Nor  Base.Bool
-instance Associative 'Nor  Base.Bool
-instance Commutative 'Nor  Base.Bool
-instance IdentityOp  'Nor  Base.Bool where identity# _ = Base.False
-instance LeftDistributive  'Nand 'Nor Base.Bool
-instance RightDistributive 'Nand 'Nor Base.Bool
-instance LeftDistributive  'Nor 'Nand Base.Bool
-instance RightDistributive 'Nor 'Nand Base.Bool
-instance Invertible 'And  Base.Bool where inv# _ = Base.not
-instance Invertible 'Or   Base.Bool where inv# _ = Base.not
-instance Invertible 'Nand Base.Bool where inv# _ = Base.not
-instance Invertible 'Nor  Base.Bool where inv# _ = Base.not
-instance Magma       'Xor Base.Bool
-instance Associative 'Xor Base.Bool
-instance Commutative 'Xor Base.Bool
+instance BinOp 'Total 'Impl Bool where
+    op# _ True  True = True
+    op# _ False _    = True
+    op# _ _     _    = False
 
-instance BinOp       'Impl Base.Bool Base.Bool where
-    op# _ Base.True Base.True = Base.True 
-    op# _ Base.False _ = Base.True
-    op# _ _ _ = Base.False
-instance Magma       'Impl Base.Bool
+deriving via (Basic Bool) instance Ord' 'Total Bool
 
-
-deriving via (Basic Base.Bool) instance Eq 'Total Base.Bool
-deriving via (Basic Base.Bool) instance Ord 'Total Base.Bool
-
-instance BinOp 'And Ordering Ordering where op# _ = (Base.<>)
-deriving via (Monoidal Ordering) instance Magma       'And Ordering
-deriving via (Monoidal Ordering) instance Associative 'And Ordering
-deriving via (Monoidal Ordering) instance Idempotent  'And Ordering
-deriving via (Monoidal Ordering) instance Commutative 'And Ordering
-deriving via (Monoidal Ordering) instance IdentityOp  'And Ordering
+deriving via (Monoidal Ordering) instance BinOp 'Total       'And Ordering
+deriving via (Monoidal Ordering) instance AssociativeOp 'And Ordering
+deriving via (Monoidal Ordering) instance Idempotent    'And Ordering
+deriving via (Monoidal Ordering) instance Commutative   'And Ordering
+deriving via (Monoidal Ordering) instance IdentityOp    'And Ordering

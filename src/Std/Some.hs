@@ -8,7 +8,7 @@ module Std.Some
     , Dynamic
     ) where
 
-import "base" Prelude ( Maybe(..) )
+import "base" Prelude ( Maybe(..), String )
 import "base" GHC.Exception
 import "base" Data.Typeable
 import "base" Data.Kind
@@ -38,7 +38,9 @@ use2 f a = use (use f a)
 useT2 :: (forall a b. (c0 a, c1 b) => f a -> g b -> c) -> SomeT c0 f -> SomeT c1 g -> c
 useT2 f a = useT (useT f a)
 
-type (==>) (c0 :: k -> Constraint) (c1 :: k -> Constraint) = (forall x. c0 x => c1 x) :: Constraint
+class    (forall x. c0 x => c1 x) => (c0 :: k -> Constraint) ==> (c1 :: k -> Constraint)
+instance (forall x. c0 x => c1 x) => (c0 :: k -> Constraint) ==> (c1 :: k -> Constraint)
+ 
 
 class Typeable a => Castable a
 instance Typeable a => Castable a
@@ -59,11 +61,6 @@ instance (c ==> Show) => Show (Some c) where
         = showParen (d >= 10)
         $ showString "Some "
         . showsPrec 11 a
-
-instance (Typeable c, c ==> Exception) => Exception (Some c) where
-    toException = use toException
-    displayException = use show
-    fromException (SomeException e) = cast e
 
 instance CatFunctor (~>) (->) (SomeT c) where
     catMap (NT f) (SomeT a) = SomeT (f a)

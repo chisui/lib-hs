@@ -89,7 +89,9 @@ isoThrough :: forall b a c. (Isomorphic a b, Isomorphic b c) => a <-> c
 isoThrough = (iso :: b <-> c) . (iso :: a <-> b)
 
 etaIso :: forall g f a. CatIsomorphic (~>) f g => f a <-> g a
-etaIso = liftIso eta eta catIso
+etaIso = t' :<-> f'
+  where
+    (NT t' :<-> NT f') = catIso
 
 instance CatIsomorphic HASK (Op cat b a) (a `cat` b) where catIso = coerce
 

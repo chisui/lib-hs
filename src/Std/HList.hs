@@ -97,13 +97,13 @@ instance CatFunctor (~>) (->) (HListT as) => CatFunctor (~>) (->) (HListT (a ': 
         mapNext :: HList (Map f as) -> HList (Map g as)
         mapNext = to coerce (catMap f :: HListT as f -> HListT as g)
 
-instance Eq 'Total (HList '[]) where
-    _ ==? _ = pure True
-    _ /=? _ = pure False
-instance (Eq u a, Eq v (HList as), t ~ Min u v) => Eq t (HList (a ': as)) where
-    (a ::: as) ==? (b ::: bs) = zipRes (&&) (a ==? b) (as ==? bs)
+instance Eq (HList '[]) where
+    _ == _ = True
+    _ /= _ = False
+instance (Eq a, Eq (HList as)) => Eq (HList (a ': as)) where
+    (a ::: as) == (b ::: bs) = a == b && as == bs
 
-instance Ord 'Total (HList '[]) where
+instance Ord' 'Total (HList '[]) where
     compare' _ _ = pure EQ
-instance (Ord u a, Ord v (HList as), t ~ Min u v) => Ord t (HList (a ': as)) where
+instance (Ord' u a, Ord' v (HList as), t ~ Min u v) => Ord' t (HList (a ': as)) where
     compare' (a ::: as) (b ::: bs) = zipRes (&&) (compare' a b) (compare' as bs)

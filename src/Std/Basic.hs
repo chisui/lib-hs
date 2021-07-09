@@ -10,6 +10,7 @@ module Std.Basic
     , errorToPartial3, liftTotal3
     ) where
 
+import "base" Data.Eq
 import "base" Data.Either ( Either(..) )
 import "base" GHC.IO.Unsafe ( unsafePerformIO )
 import "base" Data.Coerce ( Coercible )
@@ -19,12 +20,12 @@ import "this" Std.Partial
 import "this" Std.Cat
 
 
-newtype Basic          a = Basic a
-newtype Unsafe         a = Unsafe a
-newtype Unsafe1        a = Unsafe1 a
-newtype Monoidal       a = Monoidal a
-newtype Numeric        a = Numeric a
-newtype PartialNumeric a = PartialNumeric a
+newtype Basic          a = Basic          a deriving newtype Eq
+newtype Unsafe         a = Unsafe         a deriving newtype Eq
+newtype Unsafe1        a = Unsafe1        a deriving newtype Eq
+newtype Monoidal       a = Monoidal       a deriving newtype Eq
+newtype Numeric        a = Numeric        a deriving newtype Eq
+newtype PartialNumeric a = PartialNumeric a deriving newtype Eq
 
 errorToPartial0 :: forall a. a -> Res 'Partial a
 errorToPartial0 x = toRes' (unsafePerformIO (try (evaluate x)))
