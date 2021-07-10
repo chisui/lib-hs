@@ -9,6 +9,7 @@ module Std.Generic
     , absurdV1
     ) where
 
+import "base" Text.Show
 import "base" Data.Void
 import "base" Data.Either ( Either(..), either )
 import "base" GHC.Generics as Exp
@@ -17,7 +18,6 @@ import "base" GHC.Generics as Exp
     )
 import "base" GHC.Generics qualified as Base
 
-import "this" Std.Debug
 import "this" Std.Cat
 
 

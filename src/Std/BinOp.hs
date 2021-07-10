@@ -64,6 +64,7 @@ class    BinOp 'Add a => Add a
 instance BinOp 'Add a => Add a
 (+) :: Add a => a -> a -> OpRes 'Add a
 (+) = op# (proxy# @'Add)
+infixr 5 +
 class    InvertibleOp 'Add a => Sub a
 instance InvertibleOp 'Add a => Sub a
 (-) :: Sub a => a -> a -> InvOpRes 'Add a
@@ -104,6 +105,11 @@ instance Base.Num a => IdentityOp 'Add (Numeric a) where
 instance Base.Num a => BinOp 'Mult (Numeric a) where
     type OpTotallity 'Mult (Numeric a) = 'Total
     op# _ = to coerce ((Base.*) @a)
+
+instance Base.Fractional a => InvertibleOp 'Mult (Numeric a) where
+    type InvOpTotallity 'Mult (Numeric a) = 'Total
+    inv# _ = to coerce (Base.recip @a)
+    invOp# _ = to coerce ((Base./) @a)
 
 instance Base.Num a => IdentityOp 'Mult (Numeric a) where
     identity# _ = to coerce (1 :: Basic a)
@@ -165,5 +171,15 @@ deriving via (Numeric    Base.Integer) instance InvertibleOp 'Add  Base.Integer
 deriving via (Numeric    Base.Integer) instance BinOp        'Mult Base.Integer
 deriving via (Integrally Base.Integer) instance InvertibleOp 'Mult Base.Integer
 
-deriving via (Monoidal Base.String) instance BinOp 'Add Base.String
+deriving via (Numeric    Base.Word) instance BinOp        'Add  Base.Word
+deriving via (Numeric    Base.Word) instance InvertibleOp 'Add  Base.Word
+deriving via (Numeric    Base.Word) instance BinOp        'Mult Base.Word
+deriving via (Integrally Base.Word) instance InvertibleOp 'Mult Base.Word
+
+deriving via (Numeric        Base.Double) instance BinOp        'Add  Base.Double
+deriving via (PartialNumeric Base.Double) instance InvertibleOp 'Add  Base.Double
+deriving via (Numeric        Base.Double) instance BinOp        'Mult Base.Double
+deriving via (PartialNumeric Base.Double) instance InvertibleOp 'Mult Base.Double
+
+deriving via (Monoidal Base.String) instance BinOp      'Add Base.String
 deriving via (Monoidal Base.String) instance IdentityOp 'Add Base.String

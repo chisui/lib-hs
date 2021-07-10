@@ -11,9 +11,11 @@ module Std.Literal
     , Pred(..), Succ(..)
     ) where
 
+import "base" Prelude ( (==) )
 import "base" Prelude qualified as Base
 import "base" Data.String qualified as Base
 import "base" GHC.Exts qualified as Base
+import "base" GHC.Float.RealFracMethods qualified as Base
 import "base" Prelude ( Int, Integer, String )
 
 import "this" Std.Partial
@@ -146,10 +148,29 @@ deriving via (Basic  Base.Integer) instance Pred        'Total   Base.Integer
 deriving via (Basic  Base.Integer) instance Succ        'Total   Base.Integer
 
 
-deriving via (Basic  Base.Int) instance FromInteger  Base.Int
-deriving via (Basic  Base.Int) instance FromInt     'Total   Base.Int
-deriving via (Basic  Base.Int) instance ToInt       'Total   Base.Int
-deriving via (Basic  Base.Int) instance ToInteger   'Total   Base.Int
-deriving via (Basic  Base.Int) instance Pred        'Total   Base.Int
-deriving via (Basic  Base.Int) instance Succ        'Total   Base.Int
+deriving via (Basic Base.Int) instance FromInteger  Base.Int
+deriving via (Basic Base.Int) instance FromInt     'Total   Base.Int
+deriving via (Basic Base.Int) instance ToInt       'Total   Base.Int
+deriving via (Basic Base.Int) instance ToInteger   'Total   Base.Int
+deriving via (Basic Base.Int) instance Pred        'Total   Base.Int
+deriving via (Basic Base.Int) instance Succ        'Total   Base.Int
 
+
+deriving via (Basic Base.Word) instance FromInteger  Base.Word
+deriving via (Basic Base.Word) instance FromInt     'Total   Base.Word
+deriving via (Basic Base.Word) instance ToInt       'Total   Base.Word
+deriving via (Basic Base.Word) instance ToInteger   'Total   Base.Word
+deriving via (Basic Base.Word) instance Pred        'Total   Base.Word
+deriving via (Basic Base.Word) instance Succ        'Total   Base.Word
+
+
+deriving via (Basic  Base.Double) instance FromInteger  Base.Double
+deriving via (Basic  Base.Double) instance FromInt     'Total   Base.Double
+deriving via (Basic  Base.Double) instance Pred        'Total   Base.Double
+deriving via (Basic  Base.Double) instance Succ        'Total   Base.Double
+instance ToInt     'Partial Base.Double where toInt     = properFracPartial . Base.properFractionDoubleInt
+instance ToInteger 'Partial Base.Double where toInteger = properFracPartial . Base.properFractionDoubleInteger
+
+properFracPartial :: (Base.Eq r, FromInteger r) => (a, r) -> Res 'Partial a
+properFracPartial (a, 0) = FullRes a
+properFracPartial _      = EmptyRes

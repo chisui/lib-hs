@@ -14,12 +14,12 @@ module Std.Partial
     , type (-!>), type (-?>)
     ) where
 
+import "base" Text.Show ( Show )
 import "base" Data.Kind ( Type )
 import "base" Data.Maybe ( Maybe, maybe )
 
 import "this" Std.Generic
 import "this" Std.Cat
-import "this" Std.Debug
 
 
 data Totallity

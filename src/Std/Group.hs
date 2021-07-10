@@ -2,12 +2,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Group where
 
+import "base" Data.Proxy
 import "base" Prelude qualified as Base
 
 import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
 import "this" Std.BinOp
-import "this" Std.Cat
 
 
 class    TotalBinOp op a => Magma op a
