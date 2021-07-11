@@ -30,9 +30,9 @@ pam = catMap . Op
 instance CatFunctor c0 c1 f => CatFunctor (Op c0) (Op c1) f where catMap (Op f) = Op (catMap f)
 
 
-instance CatLeftFunctor'  c c0 c1 f => CatLeftFunctor'  c (Op c0) (Op c1) f where left'  (Op f) = Op (left' f)
-instance CatRightFunctor' c c0 c1 f => CatRightFunctor' c (Op c0) (Op c1) f where right' (Op f) = Op (right' f)
-instance CatBifunctor' c c0 c1 c2 f => CatBifunctor' c (Op c0) (Op c1) (Op c2) f where
+instance CatLeftFunctor'  c c' c0 c1    f => CatLeftFunctor'  c c' (Op c0) (Op c1) f where left'  (Op f) = Op (left' f)
+instance CatRightFunctor' c c' c0 c1    f => CatRightFunctor' c c' (Op c0) (Op c1) f where right' (Op f) = Op (right' f)
+instance CatBifunctor'    c c' c0 c1 c2 f => CatBifunctor'    c c' (Op c0) (Op c1) (Op c2) f where
     catBimap' (Op f) (Op g) = Op (catBimap' f g)
 
 instance Cocartesian cat => Cartesian (Op cat) where

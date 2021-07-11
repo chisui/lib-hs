@@ -1,9 +1,12 @@
 module Std.Cat.Comonad where
 
 import "base" Data.Functor.Identity
+import "base" Data.List.NonEmpty qualified as Base
+import "base" Data.List.NonEmpty ( NonEmpty(..) )
 import "base" Data.Coerce
 
 import "this" Std.Cat.Class
+import "this" Std.Cat.Closed
 import "this" Std.Cat.Applicative
 import "this" Std.Cat.Monad
 import "this" Std.Cat.Op
@@ -21,6 +24,9 @@ class CatExtend cat m where
     (<<=) :: m a `cat` b -> m a `cat` m b
 type Extend = CatExtend HASK
 
+(=>>) :: Extend m => m a -> (m a -> b) -> m b
+(=>>) = flip (<<=)
+
 instance CatBind cat m => CatExtend (Op cat) m where
     (<<=) (Op f) = Op ((=<<) f)
 
@@ -36,9 +42,32 @@ type Comonad = CatComonad HASK
 
 instance CatMonad cat m => CatComonad (Op cat) m
 
-class (CatAp cat f, CatComonad cat f) => ComonadApply cat f
+class (CatAp cat f, CatComonad cat f) => CatComonadApply cat f
 
-instance CatExtract   HASK Identity where extract = coerce
-instance CatExtend    HASK Identity where (<<=) = coerce
-instance CatDuplicate HASK Identity where duplicate = coerce
-instance CatComonad   HASK Identity
+class Closed cat => CatUnlift2 cat f where
+    unlift2 :: f ((Exp cat a r) `cat` Exp cat (Exp cat b r) r)
+            `cat` Exp cat (Exp cat (f a) r) (Exp cat (Exp cat (f b) r) r)
+type Unlift2 = CatUnlift2 HASK
+
+class (CatExtract cat f, CatUnlift2 cat f) => CatCoapplicative cat f
+type Coapplicative = CatCoapplicative HASK
+
+
+instance CatExtract       HASK Identity where extract = coerce
+instance CatExtend        HASK Identity where (<<=) = coerce
+instance CatDuplicate     HASK Identity where duplicate = coerce
+instance CatComonad       HASK Identity
+instance CatComonadApply  HASK Identity
+instance CatUnlift2       HASK Identity where unlift2 = coerce
+instance CatCoapplicative HASK Identity
+
+instance CatExtract   HASK NonEmpty where extract (a :| _) = a
+instance CatDuplicate HASK NonEmpty where duplicate = (<<=) id
+instance CatExtend    HASK NonEmpty where
+    f <<= w@(~(_ :| aas)) =
+        f w :| case aas of
+            []     -> []
+            (a:as) -> Base.toList (f <<= (a :| as))
+instance CatComonad HASK NonEmpty
+instance CatUnlift2 HASK NonEmpty where
+    unlift2 (f :| _) a b = f (a . pure) (b . pure)

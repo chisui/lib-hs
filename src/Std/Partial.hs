@@ -17,6 +17,8 @@ module Std.Partial
     ) where
 
 import "base" Text.Show ( Show )
+import "base" Data.Eq ( Eq(..) )
+import "base" Data.Bool ( Bool(..) )
 import "base" Data.Kind ( Type )
 import "base" Data.Maybe ( Maybe, maybe )
 
@@ -33,31 +35,32 @@ data Res (t :: Totallity) (a :: Type) where
     FullRes  :: a -> Res t a
     EmptyRes :: Res 'Partial a
 
-unpackRes :: Alternative f => Res t a -> f a
-unpackRes (FullRes a) = pure a
-unpackRes EmptyRes    = empty
-
-class MapDirectRes (t :: Totallity) where
-    mapDirectRes :: proxy t -> (a -> b) -> DirectRes t a -> DirectRes t b
-instance MapDirectRes 'Partial where
-    mapDirectRes _ f (FullRes a) = FullRes (f a)
-    mapDirectRes _ _ EmptyRes = EmptyRes
-instance MapDirectRes 'Total where
-    mapDirectRes _ f a = f a
-
-type TotalRes = Res 'Total
+type TotalRes   = Res 'Total
 type PartialRes = Res 'Partial
+
+type (-!>) a b = a -> Res 'Total b
+type (-?>) a b = a -> Res 'Partial b
 
 type family DirectRes (t :: Totallity) a where
     DirectRes 'Total   a = a
     DirectRes 'Partial a = PartialRes a
 
+class MapDirectRes (t :: Totallity) where
+    mapDirectRes :: proxy t -> (a -> b) -> DirectRes t a -> DirectRes t b
+instance MapDirectRes 'Partial where
+    mapDirectRes _ f (FullRes a) = FullRes (f a)
+    mapDirectRes _ _ EmptyRes    = EmptyRes
+instance MapDirectRes 'Total where
+    mapDirectRes _ = id
+
 class Undefinable a where                            undefined :: Undefinable a => a
 instance Undefinable b => Undefinable (a -> b) where undefined _ = undefined
 instance Undefinable (Res 'Partial a) where          undefined = EmptyRes
 
-type (-!>) a b = a -> Res 'Total b
-type (-?>) a b = a -> Res 'Partial b
+instance Eq a => Eq (Res t a) where
+    EmptyRes == EmptyRes = True
+    FullRes a == FullRes b = a == b
+    _ == _ = False
 
 instance CatFunctor HASK HASK (Res t) where
     catMap f (FullRes a) = FullRes (f a)
@@ -91,6 +94,20 @@ instance CatAlternative HASK (Res 'Partial)
 
 instance CatMonadFail HASK (Res 'Partial) where
     fail _ = empty
+
+instance CatIsomorphic HASK (Res 'Total a) (Identity a) where
+    catIso = etaIso
+instance CatIsomorphic (~>) (Res 'Total) Identity where
+    catIso = NT (\(FullRes a) -> pure a) :<-> NT (\(Identity a) -> pure a)
+
+instance CatIsomorphic HASK (Res 'Partial a) (Maybe a) where
+    catIso = etaIso
+instance CatIsomorphic (~>) (Res 'Partial) Maybe where
+    catIso = NT unpackRes :<-> NT toRes
+
+unpackRes :: Alternative f => Res t a -> f a
+unpackRes (FullRes a) = pure a
+unpackRes EmptyRes    = empty
 
 fromRes :: a -> Res t a -> a
 fromRes _ (FullRes a) = a

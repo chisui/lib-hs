@@ -40,6 +40,6 @@ instance (Applicative f, Applicative g) => CatLift2 HASK (f . g) where
 instance (Applicative f, Applicative g) => CatApplicative HASK (f . g)
 
 
-instance CatLeftFunctor'  Functor (~>) (~>) (.) where left'  f = NT (liftCompose         (eta f))
-instance CatRightFunctor' Functor (~>) (~>) (.) where right' f = NT (liftCompose (catMap (eta f)))
-instance CatBifunctor'    Functor (~>) (~>) (~>) (.)
+instance CatLeftFunctor'  Functor Functor (~>) (~>) (.) where left'  f = NT (liftCompose         (eta f))
+instance CatRightFunctor' Functor Functor (~>) (~>) (.) where right' f = NT (liftCompose (catMap (eta f)))
+instance CatBifunctor'    Functor Functor (~>) (~>) (~>) (.)

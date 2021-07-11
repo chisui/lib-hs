@@ -88,6 +88,9 @@ recip :: InverseOp 'Mult a => a -> OpRes (InvOp 'Mult a) a
 recip = inv# (proxy# @'Mult)
 
 
+class    (Eq a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
+instance (Eq a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
+
 instance Base.Num a => BinOp 'Add (Numeric a) where
     type OpTotallity 'Add (Numeric a) = 'Total
     op# _ = to coerce ((Base.+) @a)

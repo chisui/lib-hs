@@ -1,4 +1,5 @@
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Std.Literal
@@ -14,6 +15,7 @@ module Std.Literal
 import "base" Prelude ( (==) )
 import "base" Prelude qualified as Base
 import "base" Data.String qualified as Base
+import "base" Data.List.NonEmpty qualified as Base ( NonEmpty(..) )
 import "base" GHC.Exts qualified as Base
 import "base" GHC.Float.RealFracMethods qualified as Base
 import "base" Prelude ( Int, Integer, String )
@@ -26,8 +28,8 @@ import "this" Std.Cat
 class FromInteger a where
     fromInteger :: Integer -> a
 
-class ToInteger t a | a -> t where
-    toInteger :: a -> Res t Integer
+class MapDirectRes t => ToInteger t a | a -> t where
+    toInteger :: a -> DirectRes t Integer
 
 class (FromInteger a, ToInteger 'Total a) => IsInteger a
 instance (FromInteger a, ToInteger 'Total a) => IsInteger a
@@ -35,8 +37,8 @@ instance (FromInteger a, ToInteger 'Total a) => IsInteger a
 class FromString a where
     fromString :: String -> a
 
-class FromInt t a | a -> t where
-    fromInt :: Int -> Res t a
+class MapDirectRes t => FromInt t a | a -> t where
+    fromInt :: Int -> DirectRes t a
 
 
 class HasItems l where
@@ -45,21 +47,21 @@ class HasItems l where
 class HasItems l => FromList l where
     fromList :: [Item l] -> l
 
-class HasItems l => ToList (t :: Totallity) l | l -> t where
-    toList :: l -> Res t [Item l]
+class (MapDirectRes t, HasItems l) => ToList (t :: Totallity) l | l -> t where
+    toList :: l -> DirectRes t [Item l]
 
 class (FromList t, ToList 'Total t) => IsList t
 instance (FromList t, ToList 'Total t) => IsList t
 
 -- Bridge for rebindable syntax
-toEnum :: forall a t. FromInt t a => Int -> Res t a
+toEnum :: forall a t. FromInt t a => Int -> DirectRes t a
 toEnum = fromInt @t @a
 
-class ToInt t a | a -> t where
-    toInt :: a -> Res t Int
+class MapDirectRes t => ToInt t a | a -> t where
+    toInt :: a -> DirectRes t Int
 
 -- Bridge for rebindable syntax
-fromEnum :: ToInt t a => a -> Res t Int
+fromEnum :: ToInt t a => a -> DirectRes t Int
 fromEnum = toInt
 
 class MinBound a where
@@ -71,11 +73,11 @@ class MaxBound a where
 class (MinBound a, MaxBound a) => Bounded a
 instance (MinBound a, MaxBound a) => Bounded a
 
-class Pred t a | a -> t where
-    pred :: a -> Res t a
+class MapDirectRes t => Pred t a | a -> t where
+    pred :: a -> DirectRes t a
 
-class Succ t a | a -> t where
-    succ :: a -> Res t a
+class MapDirectRes t => Succ t a | a -> t where
+    succ :: a -> DirectRes t a
 
 -- instances 
 
@@ -84,19 +86,19 @@ instance Base.Num a => FromInteger (Basic a) where
     fromInteger = to coerce (Base.fromInteger :: Integer -> a)
 
 instance Base.Integral a => ToInteger 'Total (Basic a) where
-    toInteger = pure . to coerce (Base.toInteger :: a -> Integer)
+    toInteger = to coerce (Base.toInteger :: a -> Integer)
 
 instance Base.IsString a => FromString (Basic a) where
     fromString = to coerce (Base.fromString :: String -> a)
 
 instance Base.Enum a => FromInt 'Total (Basic a) where
-    fromInt = pure . to coerce (Base.toEnum :: Int -> a)
+    fromInt = to coerce (Base.toEnum :: Int -> a)
 instance Base.Enum a => ToInt 'Total (Basic a) where
-    toInt = pure . to coerce (Base.fromEnum :: a -> Int)
+    toInt = to coerce (Base.fromEnum :: a -> Int)
 instance Base.Enum a => Pred 'Total (Basic a) where
-    pred = pure . to coerce (Base.pred :: a -> a)
+    pred = to coerce (Base.pred :: a -> a)
 instance Base.Enum a => Succ 'Total (Basic a) where
-    succ = pure . to coerce (Base.succ :: a -> a)
+    succ = to coerce (Base.succ :: a -> a)
 
 instance Base.Bounded a => MinBound (Basic a) where
     minBound = to coerce (Base.minBound :: a)
@@ -121,12 +123,12 @@ instance Base.IsList l => HasItems (Basic l) where
 instance Base.IsList l => FromList (Basic l) where
     fromList = to coerce (Base.fromList @l)
 instance Base.IsList l => ToList 'Total (Basic l) where
-    toList = pure . to coerce (Base.toList @l)
+    toList = to coerce (Base.toList @l)
 
 instance IsList l => Base.IsList (Basic l) where
     type Item (Basic l) = Item l
     fromList = to coerce (Std.Literal.fromList @l)
-    toList = total . to coerce (Std.Literal.toList @'Total @l)
+    toList = to coerce (Std.Literal.toList @'Total @l)
 
 instance Base.IsList l => HasItems (Unsafe l) where
     type Item (Unsafe l) = Base.Item l
@@ -139,6 +141,10 @@ deriving via (Unsafe Base.Bool) instance ToInt 'Partial Base.Bool
 deriving via (Basic [a]) instance HasItems [a]
 deriving via (Basic [a]) instance FromList [a]
 deriving via (Basic [a]) instance ToList 'Total [a]
+
+deriving via (Basic (Base.NonEmpty a)) instance HasItems (Base.NonEmpty a)
+deriving via (Basic (Base.NonEmpty a)) instance FromList (Base.NonEmpty a)
+deriving via (Basic (Base.NonEmpty a)) instance ToList 'Total (Base.NonEmpty a)
 
 deriving via (Basic  Base.Integer) instance FromInteger Base.Integer
 deriving via (Basic  Base.Integer) instance FromInt     'Total   Base.Integer

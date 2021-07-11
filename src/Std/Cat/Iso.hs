@@ -69,10 +69,10 @@ instance          CatId cat   => CatId               (Iso cat)   where id = id :
 instance       Category cat   => Category            (Iso cat)
 instance       Category cat   => Groupoid            (Iso cat)   where invCat f = from f :<-> to f
 
-instance      EndoFunctor    cat f => CatFunctor         (Iso cat) (Iso cat) f where catMap = liftIso catMap catMap
-instance  EndoLeftFunctor' c cat f => CatLeftFunctor'  c (Iso cat) (Iso cat) f where left'   = liftIso left'   left'
-instance EndoRightFunctor' c cat f => CatRightFunctor' c (Iso cat) (Iso cat) f where right'  = liftIso right'  right'
-instance    EndoBifunctor' c cat f => CatBifunctor'    c (Iso cat) (Iso cat) (Iso cat) f
+instance      EndoFunctor       cat f => CatFunctor            (Iso cat) (Iso cat) f where catMap = liftIso catMap catMap
+instance  EndoLeftFunctor' c c' cat f => CatLeftFunctor'  c c' (Iso cat) (Iso cat) f where left'   = liftIso left'   left'
+instance EndoRightFunctor' c c' cat f => CatRightFunctor' c c' (Iso cat) (Iso cat) f where right'  = liftIso right'  right'
+instance    EndoBifunctor' c c' cat f => CatBifunctor'    c c' (Iso cat) (Iso cat) (Iso cat) f
 
 instance CatCommutative cat  f => CatCommutative (Iso cat) f         where commute = commute :<-> commute
 instance       Category cat    => CatCommutative HASK      (Iso cat) where commute = invCat

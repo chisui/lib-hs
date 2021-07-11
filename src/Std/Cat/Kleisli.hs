@@ -66,8 +66,8 @@ instance Distributive m => Closed (Kleisli m) where
     curry   = liftKleisli $ \f -> catPure . Kleisli . curry f
     uncurry = liftKleisli $ \f (a, b) -> ($ b) . unKleisli =<< f a
 
-instance (Associative f, LeftFunctor' c f, Distributive m) => CatLeftFunctor' c (Kleisli m) (Kleisli m) f where
+instance (Associative f, LeftFunctor' c0 c1 f, Distributive m) => CatLeftFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
     left' = liftKleisli $ \f -> map unLeft . distribute . map f . MkLeft
-instance (Associative f, Distributive m, RightFunctor' c f) => CatRightFunctor' c (Kleisli m) (Kleisli m) f where
+instance (Associative f, Distributive m, RightFunctor' c0 c1 f) => CatRightFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
     right' = liftKleisli $ \f -> map unRight . distribute . map f . MkRight
-instance (Associative f, Distributive m, Bifunctor' c f) => CatBifunctor' c (Kleisli m) (Kleisli m) (Kleisli m) f
+instance (Associative f, Distributive m, Bifunctor' c0 c1 f) => CatBifunctor' c0 c1 (Kleisli m) (Kleisli m) (Kleisli m) f

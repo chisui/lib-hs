@@ -35,9 +35,9 @@ instance Cocartesian (~>) where
     rght = NT (Prod1 . rght)
     NT f ||| NT g = NT ((f ||| g) . unProd1)
 
-instance EndoLeftFunctor HASK f => CatLeftFunctor' Unconstrained (~>) (~>) (Prod1 f) where
+instance EndoLeftFunctor HASK f => CatLeftFunctor' Unconstrained Unconstrained (~>) (~>) (Prod1 f) where
     left' (NT f) = NT (liftProd1 (left f))
-instance EndoRightFunctor HASK f => CatRightFunctor' Unconstrained (~>) (~>) (Prod1 f) where
+instance EndoRightFunctor HASK f => CatRightFunctor' Unconstrained Unconstrained (~>) (~>) (Prod1 f) where
     right' (NT f) = NT (liftProd1 (right f))
-instance EndoBifunctor HASK f => CatBifunctor' Unconstrained (~>) (~>) (~>) (Prod1 f) where
+instance EndoBifunctor HASK f => CatBifunctor' Unconstrained Unconstrained (~>) (~>) (~>) (Prod1 f) where
     catBimap' (NT f) (NT g) = NT (liftProd1 (catBimap f g))

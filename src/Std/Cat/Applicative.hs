@@ -2,17 +2,20 @@ module Std.Cat.Applicative where
 
 import "base" Data.Bool ( Bool(..)) 
 import "base" Data.Coerce
+import "base" Data.Kind
 import "base" GHC.IO qualified as Base
 import "base" Data.Maybe qualified as Base
 import "base" Control.Applicative qualified as Base
 import "base" Data.Functor.Identity qualified as Base
+import "base" Data.Semigroup qualified as Base
+import "base" Data.List.NonEmpty ( NonEmpty(..) )
 
 import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
 import "this" Std.Cat.Closed
 
 
-class EndoFunctor cat f => CatPure cat f where
+class EndoFunctor cat f => CatPure (cat :: k -> k -> Type) f where
     catPure :: a `cat` f a
 type Pure = CatPure HASK
 pure :: Pure f => a -> f a
@@ -35,7 +38,7 @@ class (Closed cat, EndoFunctor cat f) => CatLift2 cat f where
     lift2 :: (a `cat` Exp cat b c) -> (f a `cat` Exp cat (f b) (f c))
 type Lift2 = CatLift2 HASK
 
-class (CatPure cat f, CatAp cat f, CatLift2 cat f) => CatApplicative cat f
+class (Category cat, EndoFunctor cat f, CatPure cat f, CatAp cat f, CatLift2 cat f) => CatApplicative cat f
 type Applicative = CatApplicative HASK
 
 class CatEmpty cat f where
@@ -45,6 +48,12 @@ class CatCombine cat f where
 
 class (CatApplicative cat f, CatEmpty cat f, CatCombine cat f) => CatAlternative cat f
 type Alternative = CatAlternative HASK
+
+catCons :: CatAlternative cat f => a `cat` Exp cat (f a) (f a)
+catCons = (<>) . catPure
+
+cons :: Alternative f => a -> f a -> f a
+cons = catCons
 
 empty :: Alternative f => f a
 empty = catEmpty ()
@@ -102,3 +111,9 @@ deriving via (Basic1 []) instance CatApplicative HASK []
 deriving via (Basic1 []) instance CatEmpty       HASK []
 deriving via (Basic1 []) instance CatCombine     HASK []
 deriving via (Basic1 []) instance CatAlternative HASK []
+
+deriving via (Basic1 NonEmpty) instance CatPure        HASK NonEmpty
+deriving via (Basic1 NonEmpty) instance CatAp          HASK NonEmpty
+deriving via (Basic1 NonEmpty) instance CatLift2       HASK NonEmpty
+deriving via (Basic1 NonEmpty) instance CatApplicative HASK NonEmpty
+instance CatCombine HASK NonEmpty where (<>) = (Base.<>)
