@@ -28,7 +28,7 @@ instance HasItems (FreeGroup a) where
 instance Eq a => FromList (FreeGroup a) where
     fromList = normalizeFreeGroup . FreeGroup . map (,1)
 
-instance Eq a => BinOp 'Add (FreeGroup a) where
+instance Eq a => BinOp 'Canonic (FreeGroup a) where
     op# _ (FreeGroup a0) (FreeGroup b0) = FreeGroup (op' (reverse a0) b0)
       where
         op' ((a, na) : as) ((b, nb) : bs) 
@@ -36,17 +36,17 @@ instance Eq a => BinOp 'Add (FreeGroup a) where
         op' ((_, 0) : as) bs = op' as bs
         op' as ((_, 0) : bs) = op' as bs
         op' v w = reverse v <|> w
-instance Eq a => IdentityOp 'Add (FreeGroup a) where
+instance Eq a => IdentityOp 'Canonic (FreeGroup a) where
     identity# _ = FreeGroup []
-instance Eq a => AssociativeOp 'Add (FreeGroup a)
-instance Eq a => BinOp 'Sub (FreeGroup a) where
-    op# p a b = a + inv# p b
-instance Eq a => InverseOp 'Add (FreeGroup a) where
-    type InvOp 'Add (FreeGroup a) = 'Sub
-    inv# p = FreeGroup . map (right (inv# p)) . unFreeGroup
-instance Eq a => InverseOp 'Sub (FreeGroup a) where
-    type InvOp 'Sub (FreeGroup a) = 'Add
-    inv# _ = inv# (proxy# @'Sub)
+instance Eq a => AssociativeOp 'Canonic (FreeGroup a)
+instance Eq a => BinOp 'InvCanonic (FreeGroup a) where
+    op# p a b = a ++ inv# p b
+instance Eq a => InverseOp 'Canonic (FreeGroup a) where
+    type InvOp 'Canonic (FreeGroup a) = 'InvCanonic
+    inv# _ = FreeGroup . map (right negate) . unFreeGroup
+instance Eq a => InverseOp 'InvCanonic (FreeGroup a) where
+    type InvOp 'InvCanonic (FreeGroup a) = 'Canonic
+    inv# _ = inv# (proxy# @'InvCanonic)
 
 instance CatFunctor HASK HASK FreeGroup where
     catMap :: forall a b. (a -> b) -> FreeGroup a -> FreeGroup b
