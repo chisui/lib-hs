@@ -1,13 +1,37 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Std.Group where
+module Std.Group
+    ( module Exp
+    , Magma
+    , AssociativeOp
+    , Quasigroup
+    , Commutative
+    , Idempotent
+    , Upper(..)
+    , Lower(..)
+    , UnitalMagma
+    , Semigroup
+    , CanonicSemigroup
+    , Loop
+    , InverseSemigroup
+    , CanonicInverseSemigroup
+    , Monoid
+    , CanonicMonoid
+    , Group
+    , Abelian
+    , Semilattice
+    , DistributiveOp
+    , Ring
+    , CommutativeRing
+    , Field
+    ) where
 
 import "base" Data.Proxy
 import "base" Prelude qualified as Base
 
 import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
-import "this" Std.BinOp
+import "this" Std.BinOp as Exp
 
 
 class    TotalBinOp op a => Magma op a
@@ -43,14 +67,23 @@ instance (Magma op a, IdentityOp op a) => UnitalMagma op a
 class    AssociativeOp op a => Semigroup op a
 instance AssociativeOp op a => Semigroup op a
 
+class    AssociativeOp 'Canonic a => CanonicSemigroup a
+instance AssociativeOp 'Canonic a => CanonicSemigroup a
+
 class    (Quasigroup op a, IdentityOp op a) => Loop op a
 instance (Quasigroup op a, IdentityOp op a) => Loop op a
 
 class    (Semigroup op a, Quasigroup op a) => InverseSemigroup op a
 instance (Semigroup op a, Quasigroup op a) => InverseSemigroup op a
 
+class    (Semigroup 'Canonic a, Quasigroup 'Canonic a) => CanonicInverseSemigroup a
+instance (Semigroup 'Canonic a, Quasigroup 'Canonic a) => CanonicInverseSemigroup a
+
 class    (Semigroup op a, IdentityOp op a) => Monoid op a
 instance (Semigroup op a, IdentityOp op a) => Monoid op a
+
+class    (Semigroup 'Canonic a, IdentityOp 'Canonic a) => CanonicMonoid a
+instance (Semigroup 'Canonic a, IdentityOp 'Canonic a) => CanonicMonoid a
 
 class    (IdentityOp op a, AssociativeOp op a, Quasigroup op a) => Group op a
 instance (IdentityOp op a, AssociativeOp op a, Quasigroup op a) => Group op a
@@ -87,4 +120,4 @@ instance AssociativeOp 'Mult Base.Integer
 instance DistributiveOp 'Mult 'Add Base.Integer
 instance DistributiveOp 'Add 'Mult Base.Integer
 
-instance AssociativeOp 'Add Base.String
+instance AssociativeOp 'Canonic Base.String

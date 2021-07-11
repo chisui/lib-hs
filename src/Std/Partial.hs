@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -21,6 +22,8 @@ import "base" Data.Eq ( Eq(..) )
 import "base" Data.Bool ( Bool(..) )
 import "base" Data.Kind ( Type )
 import "base" Data.Maybe ( Maybe, maybe )
+
+import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
 import "this" Std.Generic
 import "this" Std.Cat
@@ -46,12 +49,14 @@ type family DirectRes (t :: Totallity) a where
     DirectRes 'Partial a = PartialRes a
 
 class MapDirectRes (t :: Totallity) where
-    mapDirectRes :: proxy t -> (a -> b) -> DirectRes t a -> DirectRes t b
+    mapDirectRes# :: Proxy# t -> (a -> b) -> DirectRes t a -> DirectRes t b
+    mapDirectRes :: forall a b proxy. proxy t -> (a -> b) -> DirectRes t a -> DirectRes t b
+    mapDirectRes _ = mapDirectRes# (proxy# @t)
 instance MapDirectRes 'Partial where
-    mapDirectRes _ f (FullRes a) = FullRes (f a)
-    mapDirectRes _ _ EmptyRes    = EmptyRes
+    mapDirectRes# _ f (FullRes a) = FullRes (f a)
+    mapDirectRes# _ _ EmptyRes    = EmptyRes
 instance MapDirectRes 'Total where
-    mapDirectRes _ = id
+    mapDirectRes# _ = id
 
 class Undefinable a where                            undefined :: Undefinable a => a
 instance Undefinable b => Undefinable (a -> b) where undefined _ = undefined
@@ -88,8 +93,8 @@ instance CatMonad HASK (Res t)
 instance CatEmpty HASK (Res 'Partial) where
     catEmpty _ = EmptyRes
 instance CatCombine HASK (Res t) where
-    EmptyRes <> r = r
-    r <> _ = r
+    EmptyRes <|> r = r
+    r <|> _ = r
 instance CatAlternative HASK (Res 'Partial)
 
 instance CatMonadFail HASK (Res 'Partial) where

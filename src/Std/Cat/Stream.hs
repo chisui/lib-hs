@@ -59,7 +59,7 @@ instance (CatApplicative HASK m, CatMonad HASK m) => CatJoin HASK (StreamT m) wh
 instance (CatApplicative HASK m, CatMonad HASK m) => CatMonad HASK (StreamT m)
 
 instance (CatApplicative HASK m, CatMonad HASK m) => CatCombine HASK (StreamT m) where
-    (<>) = const -- just return left since the Stream is infinite
+    (<|>) = const -- just return left since the Stream is infinite
 
 instance Comonad m => CatExtract HASK (StreamT m) where
     extract (Stream f s) = snd . extract . f $ s

@@ -44,13 +44,13 @@ type Applicative = CatApplicative HASK
 class CatEmpty cat f where
     catEmpty :: x `cat` f a 
 class CatCombine cat f where
-    (<>) :: f a `cat` Exp cat (f a) (f a)
+    (<|>) :: f a `cat` Exp cat (f a) (f a)
 
 class (CatApplicative cat f, CatEmpty cat f, CatCombine cat f) => CatAlternative cat f
 type Alternative = CatAlternative HASK
 
 catCons :: CatAlternative cat f => a `cat` Exp cat (f a) (f a)
-catCons = (<>) . catPure
+catCons = (<|>) . catPure
 
 cons :: Alternative f => a -> f a -> f a
 cons = catCons
@@ -77,8 +77,8 @@ instance Base.Alternative f => CatEmpty HASK (Basic1 f) where
     catEmpty :: forall a x. x -> Basic1 f a
     catEmpty _ = coerce (Base.empty :: f a)
 instance Base.Alternative f => CatCombine HASK (Basic1 f) where
-    (<>) :: forall a. Basic1 f a -> Basic1 f a -> Basic1 f a
-    (<>) = coerce ((Base.<|>) :: f a -> f a -> f a)
+    (<|>) :: forall a. Basic1 f a -> Basic1 f a -> Basic1 f a
+    (<|>) = coerce ((Base.<|>) :: f a -> f a -> f a)
 instance Base.Alternative f => CatAlternative HASK (Basic1 f)
 
 deriving via (Basic1 Base.Maybe) instance CatPure        HASK Base.Maybe
@@ -116,4 +116,4 @@ deriving via (Basic1 NonEmpty) instance CatPure        HASK NonEmpty
 deriving via (Basic1 NonEmpty) instance CatAp          HASK NonEmpty
 deriving via (Basic1 NonEmpty) instance CatLift2       HASK NonEmpty
 deriving via (Basic1 NonEmpty) instance CatApplicative HASK NonEmpty
-instance CatCombine HASK NonEmpty where (<>) = (Base.<>)
+instance CatCombine HASK NonEmpty where (<|>) = (Base.<>)

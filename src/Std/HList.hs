@@ -106,4 +106,4 @@ instance (Eq a, Eq (HList as)) => Eq (HList (a ': as)) where
 instance Ord' 'Total (HList '[]) where
     compare' _ _ = pure EQ
 instance (Ord' u a, Ord' v (HList as), t ~ Min u v) => Ord' t (HList (a ': as)) where
-    compare' (a ::: as) (b ::: bs) = zipRes (&&) (compare' a b) (compare' as bs)
+    compare' (a ::: as) (b ::: bs) = zipRes (++) (compare' a b) (compare' as bs)

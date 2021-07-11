@@ -19,6 +19,7 @@ import "this" Std.Cat.Compose as Exp
 import "this" Std.Cat.Distributive as Exp
 import "this" Std.Cat.Fix as Exp
 import "this" Std.Cat.Functor as Exp
+import "this" Std.Cat.Invariant as Exp
 import "this" Std.Cat.Iso as Exp
 import "this" Std.Cat.Limit as Exp
 import "this" Std.Cat.MonadFail as Exp

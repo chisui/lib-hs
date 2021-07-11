@@ -112,8 +112,8 @@ instance BinOp 'Impl Bool where
 
 deriving via (Basic Bool) instance Ord' 'Total Bool
 
-deriving via (Monoidal Ordering) instance BinOp       'And Ordering
-deriving via (Monoidal Ordering) instance IdentityOp  'And Ordering
-instance AssociativeOp 'And Ordering
-instance Idempotent    'And Ordering
-instance Commutative   'And Ordering
+deriving via (Monoidal Ordering) instance BinOp       'Canonic Ordering
+deriving via (Monoidal Ordering) instance IdentityOp  'Canonic Ordering
+instance AssociativeOp 'Canonic Ordering
+instance Idempotent    'Canonic Ordering
+instance Commutative   'Canonic Ordering

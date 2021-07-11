@@ -56,7 +56,7 @@ narrowSome (Some a) = Some a
 
 instance (c ==> Show) => Show (Some c) where
     showList = showListWith (\s -> showString "Some " . use shows s)
-    show a = "Some " + use shows a ""
+    show a = "Some " ++ use shows a ""
     showsPrec d (Some a)
         = showParen (d >= 10)
         $ showString "Some "

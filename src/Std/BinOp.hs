@@ -27,8 +27,11 @@ class    (BinOp op a, OpTotallity op a ~ t) => BinOp' t op a | op a -> t
 instance (BinOp op a, OpTotallity op a ~ t) => BinOp' t op a
 class    BinOp' 'Partial op a => PartialBinOp op a
 instance BinOp' 'Partial op a => PartialBinOp op a
-class    BinOp' 'Total   op a => TotalBinOp   op a
-instance BinOp' 'Total   op a => TotalBinOp   op a
+class    (BinOp' 'Total   op a) => TotalBinOp   op a
+instance (BinOp' 'Total   op a) => TotalBinOp   op a
+
+totalOp# :: TotalBinOp op a => Proxy# op -> a -> a -> a
+totalOp# = op#
 
 class BinOp op a => IdentityOp (op :: k) a where
     identity :: proxy op -> a
@@ -52,7 +55,8 @@ instance InverseOp' 'Partial op a => PartialInverseOp op a
 class    InverseOp' 'Total   op a => TotalInverseOp   op a
 instance InverseOp' 'Total   op a => TotalInverseOp   op a
 
-data BasicOps
+data Canonic = Canonic | InvCanonic
+data BasicOp
     = Add
     | Sub
     | Mult
@@ -75,6 +79,14 @@ class    BinOp 'Div a => Div a
 instance BinOp 'Div a => Div a
 (/) :: Div a => a -> a -> OpRes 'Div a
 (/) = op# (proxy# @'Div)
+class    BinOp 'Canonic a => CanonicOp a
+instance BinOp 'Canonic a => CanonicOp a
+(++) :: CanonicOp a => a -> a -> OpRes 'Canonic a
+(++) = op# (proxy# @'Canonic)
+class    BinOp 'InvCanonic a => InvCanonicOp a
+instance BinOp 'InvCanonic a => InvCanonicOp a
+(/+) :: InvCanonicOp a => a -> a -> OpRes 'InvCanonic a
+(/+) = op# (proxy# @'InvCanonic)
 
 
 zero :: IdentityOp 'Add a => a
@@ -157,11 +169,11 @@ instance Base.Fractional a => InverseOp 'Mult (PartialNumeric a) where
     inv# _ = errorToPartial1 (Base.recip @a)
 
 
-instance Base.Semigroup a => BinOp op (Monoidal a) where
-    type OpTotallity op (Monoidal a) = 'Total
+instance Base.Semigroup a => BinOp 'Canonic (Monoidal a) where
+    type OpTotallity 'Canonic (Monoidal a) = 'Total
     op# _ = to coerce ((Base.<>) :: a -> a -> a)
 
-instance Base.Monoid a => IdentityOp op (Monoidal a) where
+instance Base.Monoid a => IdentityOp 'Canonic (Monoidal a) where
     identity# _ = to coerce (Base.mempty :: a)
 
 
@@ -176,7 +188,7 @@ invCoerced# _ p a = mapDirectRes (Proxy @(OpTotallity (InvOp op a) a))
     (inv# p (to coerce a :: a))
 
 
-instance PartialBinOp op a => BinOp op (Res 'Partial a) where
+instance PartialBinOp op a => BinOp (op :: BasicOp) (Res 'Partial a) where
     type OpTotallity op (Res 'Partial a) = 'Total
     op# p (FullRes a) (FullRes b) = op# p a b
     op# _ EmptyRes _ = EmptyRes
@@ -220,5 +232,5 @@ deriving via (PartialNumeric Base.Double) instance BinOp 'Sub  Base.Double
 deriving via (Numeric        Base.Double) instance BinOp 'Mult Base.Double
 deriving via (PartialNumeric Base.Double) instance BinOp 'Div  Base.Double
 
-deriving via (Monoidal Base.String) instance BinOp      'Add Base.String
-deriving via (Monoidal Base.String) instance IdentityOp 'Add Base.String
+deriving via (Monoidal Base.String) instance BinOp      'Canonic Base.String
+deriving via (Monoidal Base.String) instance IdentityOp 'Canonic Base.String
