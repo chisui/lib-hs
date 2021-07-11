@@ -21,6 +21,7 @@ import "this" Std.Cat
 
 
 newtype Basic          a = Basic          a deriving newtype Eq
+newtype Newtype        a = Newtype        a deriving newtype Eq
 newtype Unsafe         a = Unsafe         a deriving newtype Eq
 newtype Unsafe1        a = Unsafe1        a deriving newtype Eq
 newtype Monoidal       a = Monoidal       a deriving newtype Eq

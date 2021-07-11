@@ -1,6 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Union
@@ -178,3 +179,7 @@ instance (Ord' u (Union (a ': as)), Ord' v b, t ~ Min u v) => Ord' t (Union (b '
 instance CatFunctor (~>) (->) (UnionT l) where
     catMap (NT f) (UnionT (UnsafeInternalUnion n v)) = UnionT (UnsafeInternalUnion n (f a))
       where a = unsafeCoerce v :: f Any -- can be done since the function can not touch a anyways.
+
+instance CatIsomorphic HASK (Union '[a, b]) (Either a b) where
+    catIso = either (Right . decomposeLast) Left . decompose
+        :<-> injectAt# (proxy# @0) `either` injectAt# (proxy# @1)

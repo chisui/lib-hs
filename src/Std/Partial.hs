@@ -7,7 +7,9 @@
 {-# LANGUAGE TupleSections #-}
 module Std.Partial
     ( Totallity(..), Res(..), DirectRes, TotalRes, PartialRes
+    , MapDirectRes(..)
     , Undefinable(..)
+    , unpackRes
     , fromRes, toRes, total, total2
     , Min, joinRes, zipRes, zipRes3, zipRes4
     , (.?), (=<<?), (?>>=)
@@ -30,6 +32,18 @@ data Totallity
 data Res (t :: Totallity) (a :: Type) where
     FullRes  :: a -> Res t a
     EmptyRes :: Res 'Partial a
+
+unpackRes :: Alternative f => Res t a -> f a
+unpackRes (FullRes a) = pure a
+unpackRes EmptyRes    = empty
+
+class MapDirectRes (t :: Totallity) where
+    mapDirectRes :: proxy t -> (a -> b) -> DirectRes t a -> DirectRes t b
+instance MapDirectRes 'Partial where
+    mapDirectRes _ f (FullRes a) = FullRes (f a)
+    mapDirectRes _ _ EmptyRes = EmptyRes
+instance MapDirectRes 'Total where
+    mapDirectRes _ f a = f a
 
 type TotalRes = Res 'Total
 type PartialRes = Res 'Partial

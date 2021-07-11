@@ -15,8 +15,8 @@ instance TotalBinOp op a => Magma op a
 
 class Magma op a => AssociativeOp (op :: k) a
 
-class    TotalInvertibleOp op a => Quasigroup op a
-instance TotalInvertibleOp op a => Quasigroup op a
+class    TotalInverseOp op a => Quasigroup op a
+instance TotalInverseOp op a => Quasigroup op a
 
 
 class Magma op a => Commutative (op :: k) a

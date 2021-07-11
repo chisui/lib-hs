@@ -8,6 +8,8 @@ import "base" Text.Show ( Show )
 import "base" GHC.Int ( Int )
 import "base" Data.Char ( Char )
 
+import "ghc-prim" GHC.Prim ( proxy# )
+
 import "this" Std.Literal
 import "this" Std.BinOp
 import "this" Std.Group
@@ -37,9 +39,14 @@ instance Eq a => BinOp 'Add (FreeGroup a) where
 instance Eq a => IdentityOp 'Add (FreeGroup a) where
     identity# _ = FreeGroup []
 instance Eq a => AssociativeOp 'Add (FreeGroup a)
-instance Eq a => InvertibleOp 'Add (FreeGroup a) where
+instance Eq a => BinOp 'Sub (FreeGroup a) where
+    op# p a b = a + inv# p b
+instance Eq a => InverseOp 'Add (FreeGroup a) where
+    type InvOp 'Add (FreeGroup a) = 'Sub
     inv# p = FreeGroup . map (right (inv# p)) . unFreeGroup
-    invOp# p a b = a + inv#p b
+instance Eq a => InverseOp 'Sub (FreeGroup a) where
+    type InvOp 'Sub (FreeGroup a) = 'Add
+    inv# _ = inv# (proxy# @'Sub)
 
 instance CatFunctor HASK HASK FreeGroup where
     catMap :: forall a b. (a -> b) -> FreeGroup a -> FreeGroup b

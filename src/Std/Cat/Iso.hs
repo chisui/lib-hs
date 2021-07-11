@@ -82,13 +82,13 @@ class CatIsomorphic cat a b where catIso :: Iso cat a b
 type Isomorphic = CatIsomorphic HASK
 type (<-->) = Isomorphic
 type (<~~>) = CatIsomorphic (~>)
-iso :: forall b a. Isomorphic a b => a <-> b
+iso :: forall b a. a <--> b => a <-> b
 iso = catIso
 
-isoThrough :: forall b a c. (Isomorphic a b, Isomorphic b c) => a <-> c
+isoThrough :: forall b a c. (a <--> b, b <--> c) => a <-> c
 isoThrough = (iso :: b <-> c) . (iso :: a <-> b)
 
-etaIso :: forall g f a. CatIsomorphic (~>) f g => f a <-> g a
+etaIso :: forall g f a. f <~~> g => f a <-> g a
 etaIso = t' :<-> f'
   where
     (NT t' :<-> NT f') = catIso

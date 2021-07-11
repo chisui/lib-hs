@@ -39,6 +39,7 @@ library:
   - GeneralizedNewtypeDeriving
   - DeriveGeneric
   - DerivingVia
+  - DeriveDataTypeable
   # type stuff
   - TypeOperators
   - TypeFamilies

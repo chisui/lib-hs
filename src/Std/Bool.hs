@@ -31,27 +31,28 @@ data BoolOp
     | Xor
     | Impl
     | Nand
+    | Nor
 
 class    BinOp 'And a => And a
 instance BinOp 'And a => And a
 infixr 3 &&
 (&&) :: And a => a -> a -> OpRes 'And a
 (&&) = op# (proxy# @'And)
-class    InvertibleOp 'And a => Nand a
-instance InvertibleOp 'And a => Nand a
+class    BinOp 'Nand a => Nand a
+instance BinOp 'Nand a => Nand a
 infixr 3 /&
-(/&) :: Nand a => a -> a -> InvOpRes 'And a
-(/&) = invOp# (proxy# @'And)
+(/&) :: Nand a => a -> a -> OpRes 'Nand a
+(/&) = op# (proxy# @'Nand)
 class    BinOp 'Or a => Or a
 instance BinOp 'Or a => Or a
 infixr 2 ||
 (||) :: Or a => a -> a -> OpRes 'Or a
 (||) = op# (proxy# @'Or)
-class    InvertibleOp 'Or a => Nor a
-instance InvertibleOp 'Or a => Nor a
+class    BinOp 'Nor a => Nor a
+instance BinOp 'Nor a => Nor a
 infixr 2 /|
-(/|) :: Nor a => a -> a -> InvOpRes 'Or a
-(/|) = invOp# (proxy# @'Or)
+(/|) :: Nor a => a -> a -> OpRes 'Nor a
+(/|) = op# (proxy# @'Nor)
 class    BinOp 'Xor a => Xor a
 instance BinOp 'Xor a => Xor a
 infixl 6 `xor`
@@ -64,43 +65,47 @@ infixr 0 ==>
 (==>) = op# (proxy# @'Impl)
 
 instance BinOp 'And Bool where
-    type OpTotallity 'And Bool = 'Total
     op# _ = (Base.&&)
 instance IdentityOp 'And Bool where
     identity# _ = True
 instance AssociativeOp 'And Bool
 instance Idempotent 'And Bool
 instance Commutative 'And Bool
-instance InvertibleOp 'And Bool where
-    type InvOpTotallity 'And Bool = 'Total
+instance BinOp 'Nand Bool where
+    op# _ True True = False
+    op# _ _    _    = True
+instance InverseOp 'And Bool where
+    type InvOp 'And Bool = 'Nand
     inv# _ = Base.not
-    invOp# _ True True = False
-    invOp# _ _    _    = True
+instance InverseOp 'Nand Bool where
+    type InvOp 'Nand Bool = 'And
+    inv# _ = Base.not
 instance BinOp 'Or Bool where
-    type OpTotallity 'Or Bool = 'Total
     op# _ = (Base.||)
 instance AssociativeOp 'Or Bool
 instance Idempotent 'Or Bool
 instance Commutative 'Or Bool
 instance IdentityOp 'Or Bool where
     identity# _ = False
-instance InvertibleOp 'Or Bool where
-    type InvOpTotallity 'Or Bool = 'Total
+instance BinOp 'Nor Bool where
+    op# _ False False = True
+    op# _ _     _     = False
+instance InverseOp 'Or Bool where
+    type InvOp 'Or Bool = 'Nor
     inv# _ = Base.not
-    invOp# _ False False = True
-    invOp# _ _     _     = False
+instance InverseOp 'Nor Bool where
+    type InvOp 'Nor Bool = 'Or
+    inv# _ = Base.not
 
 instance DistributiveOp 'Or 'And Bool
 instance DistributiveOp 'And 'Or Bool
 
 instance BinOp 'Xor Bool where
-    type OpTotallity 'Xor Bool = 'Total
     op# _ = Base.xor
 instance AssociativeOp 'Xor Bool
 instance Commutative 'Xor Bool
 
 instance BinOp 'Impl Bool where
-    type OpTotallity 'Impl Bool = 'Total
     op# _ True  True = True
     op# _ False _    = True
     op# _ _     _    = False

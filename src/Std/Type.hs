@@ -45,7 +45,7 @@ type family Replicate (n :: Nat) (a :: k) :: [k] where
     Replicate 0 _ = '[]
     Replicate n a = Replicate (n - 1) a
 
-class (KnownNat (ElemIndex t l), l ! ElemIndex t l ~ t) => Element l t
+class    (KnownNat (ElemIndex t l), l ! ElemIndex t l ~ t) => Element l t
 instance (KnownNat (ElemIndex t l), l ! ElemIndex t l ~ t) => Element l t
 
 type (t :< l) = Element l t
