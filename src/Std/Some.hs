@@ -13,6 +13,7 @@ import "base" GHC.Exception
 import "base" Data.Typeable
 import "base" Data.Kind
 
+import "this" Std.Type
 import "this" Std.Debug
 import "this" Std.Literal
 import "this" Std.Cat
@@ -62,5 +63,5 @@ instance (c ==> Show) => Show (Some c) where
         $ showString "Some "
         . showsPrec 11 a
 
-instance CatFunctor (~>) (->) (SomeT c) where
+instance CatFunctor' Unconstrained (~>) (->) (SomeT c) where
     catMap (NT f) (SomeT a) = SomeT (f a)

@@ -8,8 +8,7 @@ import "base" Text.Show ( Show )
 import "base" GHC.Int ( Int )
 import "base" Data.Char ( Char )
 
-import "ghc-prim" GHC.Prim ( proxy# )
-
+import "this" Std.Type
 import "this" Std.Literal
 import "this" Std.BinOp
 import "this" Std.Group
@@ -48,7 +47,7 @@ instance Eq a => InverseOp 'InvCanonic (FreeGroup a) where
     type InvOp 'InvCanonic (FreeGroup a) = 'Canonic
     inv# _ = inv# (proxy# @'InvCanonic)
 
-instance CatFunctor HASK HASK FreeGroup where
+instance CatFunctor' Unconstrained HASK HASK FreeGroup where
     catMap :: forall a b. (a -> b) -> FreeGroup a -> FreeGroup b
     catMap = to coerce ((map . left) :: (a -> b) -> [(a, Int)] -> [(b, Int)])
 

@@ -20,6 +20,7 @@ import "this" Std.Maybe as Exp
 import "this" Std.Ord as Exp
 import "this" Std.Partial as Exp
 import "this" Std.Quote as Exp
+import "this" Std.Sequential as Exp
 import "this" Std.Singleton as Exp
 import "this" Std.Some as Exp
 import "this" Std.Text as Exp

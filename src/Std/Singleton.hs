@@ -14,6 +14,7 @@ import "base" GHC.TypeLits
 
 import "this" Std.Partial
 import "this" Std.Cat
+import "this" Std.Maybe ()
 import "this" Std.Type
 
 

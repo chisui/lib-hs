@@ -17,11 +17,11 @@ const :: Closed cat => a `cat` Exp cat b a
 const = curry fst
 
 infixl 4 <$
-(<$) :: Functor f => a -> f b -> f a
+(<$) :: (Functor' c f, c a, c b) => a -> f b -> f a
 (<$) = map . const
 
 infixl 4 $>
-($>) :: Functor f => f a -> b -> f b
+($>) :: (Functor' c f, c a, c b) => f a -> b -> f b
 ($>) = flip (<$)
 
 on' :: Closed cat => a `cat` Exp cat b c -> a' `cat` a -> b' `cat` b -> a' `cat` Exp cat b' c

@@ -176,7 +176,7 @@ instance (Ord' u (Union (a ': as)), Ord' v b, t ~ MinTotallity u v) => Ord' t (U
     a `compare'` b = decompose a `compare'` decompose b
 
 
-instance CatFunctor (~>) (->) (UnionT l) where
+instance CatFunctor' Unconstrained (~>) (->) (UnionT l) where
     catMap (NT f) (UnionT (UnsafeInternalUnion n v)) = UnionT (UnsafeInternalUnion n (f a))
       where a = unsafeCoerce v :: f Any -- can be done since the function can not touch a anyways.
 

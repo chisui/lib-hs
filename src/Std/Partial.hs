@@ -20,11 +20,9 @@ module Std.Partial
 import "base" Text.Show ( Show )
 import "base" Data.Eq ( Eq(..) )
 import "base" Data.Bool ( Bool(..) )
-import "base" Data.Kind ( Type )
 import "base" Data.Maybe ( Maybe, maybe )
 
-import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
-
+import "this" Std.Type
 import "this" Std.Generic
 import "this" Std.Cat
 
@@ -83,48 +81,43 @@ instance Eq a => Eq (Res t a) where
     FullRes a == FullRes b = a == b
     _ == _ = False
 
-instance CatFunctor HASK HASK (Res t) where
+instance CatFunctor' Unconstrained HASK HASK (Res t) where
     catMap f (FullRes a) = FullRes (f a)
     catMap _ EmptyRes = EmptyRes
-instance CatPure HASK (Res t) where
+instance CatPure' Unconstrained HASK (Res t) where
     catPure = FullRes
-instance CatAp HASK (Res t) where
+instance CatAp' Unconstrained HASK (Res t) where
     FullRes f <**> FullRes a = FullRes (f a)
     EmptyRes  <**> _         = EmptyRes
     _         <**> EmptyRes  = EmptyRes
-instance CatLift2 HASK (Res t) where
+instance CatLift2' Unconstrained HASK (Res t) where
     lift2 f (FullRes a) (FullRes b) = pure (f a b)
     lift2 _ EmptyRes _ = EmptyRes
     lift2 _ _ EmptyRes = EmptyRes
-instance CatBind HASK (Res t) where
+instance CatBind' Unconstrained HASK (Res t) where
     (=<<) f (FullRes a) = f a
     (=<<) _ EmptyRes = EmptyRes
-instance CatJoin HASK (Res t) where
+instance CatJoin' Unconstrained HASK (Res t) where
     join (FullRes r) = r
     join EmptyRes = EmptyRes
 
-instance CatApplicative HASK (Res t)
-instance CatMonad HASK (Res t)
+instance CatApplicative' Unconstrained HASK (Res t)
+instance CatMonad' Unconstrained HASK (Res t)
 
-instance CatEmpty HASK (Res 'Partial) where
+instance CatEmpty' Unconstrained HASK (Res 'Partial) where
     catEmpty _ = EmptyRes
-instance CatCombine HASK (Res t) where
+instance CatCombine' Unconstrained HASK (Res t) where
     combine (EmptyRes, r) = r
     combine (r,        _) = r
-instance CatAlternative HASK (Res 'Partial)
+instance CatAlternative' Unconstrained HASK (Res 'Partial)
 
-instance CatMonadFail HASK (Res 'Partial) where
+instance CatMonadFail' Unconstrained HASK (Res 'Partial) where
     fail _ = empty
 
 instance CatIsomorphic HASK (Res 'Total a) (Identity a) where
     catIso = etaIso
 instance CatIsomorphic (~>) (Res 'Total) Identity where
     catIso = NT (\(FullRes a) -> pure a) :<-> NT (\(Identity a) -> pure a)
-
-instance CatIsomorphic HASK (Res 'Partial a) (Maybe a) where
-    catIso = etaIso
-instance CatIsomorphic (~>) (Res 'Partial) Maybe where
-    catIso = NT unpackRes :<-> NT toRes
 
 unpackRes :: Alternative f => Res t a -> f a
 unpackRes (FullRes a) = pure a

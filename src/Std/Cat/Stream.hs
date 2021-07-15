@@ -28,23 +28,23 @@ takeSM i s
         cons a <$> takeSM (pred i) s'
         
 
-instance Functor m => CatFunctor HASK HASK (StreamT m) where
+instance Functor m => CatFunctor' Unconstrained HASK HASK (StreamT m) where
     f <$$> Stream g s = Stream (map (map f *** f) . g) s
 
-instance (CatApplicative HASK m, CatMonad HASK m) => CatPure HASK (StreamT m) where
+instance (CatApplicative HASK m, CatMonad HASK m) => CatPure' Unconstrained HASK (StreamT m) where
     catPure a = let s = Stream (const (pure (s,a))) () in s
 
-instance (CatApplicative HASK m, CatMonad HASK m) => CatLift2 HASK (StreamT m) where
+instance (CatApplicative HASK m, CatMonad HASK m) => CatLift2' Unconstrained HASK (StreamT m) where
     lift2 f a b = f <$> a <*> b
-instance (CatApplicative HASK m, CatMonad HASK m) => CatAp HASK (StreamT m) where
+instance (CatApplicative HASK m, CatMonad HASK m) => CatAp' Unconstrained HASK (StreamT m) where
     mf <**> ma = do
         f <- mf
         a <- ma
         pure (f a)
 
-instance (CatApplicative HASK m, CatMonad HASK m) => CatApplicative HASK (StreamT m)
+instance (CatApplicative HASK m, CatMonad HASK m) => CatApplicative' Unconstrained HASK (StreamT m)
 
-instance (CatApplicative HASK m, CatMonad HASK m) => CatBind HASK (StreamT m) where
+instance (CatApplicative HASK m, CatMonad HASK m) => CatBind' Unconstrained HASK (StreamT m) where
     f =<< (Stream g s) = Stream step' s 
       where
         step' s' = do
@@ -54,25 +54,25 @@ instance (CatApplicative HASK m, CatMonad HASK m) => CatBind HASK (StreamT m) wh
                     (Stream h' t', b) <- h t
                     pure (Stream h' t', b)
 
-instance (CatApplicative HASK m, CatMonad HASK m) => CatJoin HASK (StreamT m) where
+instance (CatApplicative HASK m, CatMonad HASK m) => CatJoin' Unconstrained HASK (StreamT m) where
     join = (=<<) id
-instance (CatApplicative HASK m, CatMonad HASK m) => CatMonad HASK (StreamT m)
+instance (CatApplicative HASK m, CatMonad HASK m) => CatMonad' Unconstrained HASK (StreamT m)
 
-instance (CatApplicative HASK m, CatMonad HASK m) => CatCombine HASK (StreamT m) where
+instance (CatApplicative HASK m, CatMonad HASK m) => CatCombine' Unconstrained HASK (StreamT m) where
     combine = fst -- just return left since the Stream is infinite
 
-instance Comonad m => CatExtract HASK (StreamT m) where
+instance Comonad m => CatExtract' Unconstrained HASK (StreamT m) where
     extract (Stream f s) = snd . extract . f $ s
-instance Comonad m => CatExtend HASK (StreamT m) where
+instance Comonad m => CatExtend' Unconstrained HASK (StreamT m) where
     (<<=) f = map f . duplicate
-instance Comonad m => CatDuplicate HASK (StreamT m) where
+instance Comonad m => CatDuplicate' Unconstrained HASK (StreamT m) where
     duplicate :: forall a. StreamT m a -> StreamT m (StreamT m a)
     duplicate (Stream f s) = Stream (step' f) s
       where
         step' :: forall s. (s -> m (StreamT m a, a)) -> s -> m (StreamT m (StreamT m a), StreamT m a) 
         step' g s' = flip map (g s') $ \(Stream h s'', _) -> (Stream (step' h) s'', Stream g s')
 
-instance Comonad m => CatComonad HASK (StreamT m)
+instance Comonad m => CatComonad' Unconstrained HASK (StreamT m)
 
 instance CatLeftFunctor' Monad Unconstrained (~>) HASK StreamT where
     left' f (Stream g s) = Stream step' s

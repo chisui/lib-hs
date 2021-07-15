@@ -28,7 +28,7 @@ instance CatId        (Phantom k) where id = Phantom
 instance Category     (Phantom k)
 instance Groupoid     (Phantom k) where invCat _ = Phantom
 
-instance CatFunctor (Phantom k) (Phantom k) f where catMap _ = Phantom
+instance CatFunctor' Unconstrained (Phantom k) (Phantom k) f where catMap _ = Phantom
 
 instance Cartesian (Phantom Type) where
     type Product (Phantom Type) = (,)
@@ -63,20 +63,20 @@ instance CatArrow HASK        f (Phantom k) where catArr _ = Phantom
 instance CatArrow (Phantom k) f g           where catArr   = Phantom
 instance CatAssociative (Phantom k)    f where assoc = Phantom :<-> Phantom
 instance CatCommutative (Phantom k)    f where commute = Phantom
-instance CatPure        (Phantom Type) f where catPure = Phantom
-instance CatAp          (Phantom Type) f where (<**>) _ = Phantom
-instance CatLift2       (Phantom Type) f where lift2 _ = Phantom
-instance CatApplicative (Phantom Type) f
-instance CatEmpty       (Phantom Type) f where catEmpty = Phantom
-instance CatCombine     (Phantom Type) f where combine = Phantom
-instance CatAlternative (Phantom Type) f
-instance CatBind        (Phantom Type) f where (=<<) _ = Phantom
-instance CatJoin        (Phantom Type) f where join = Phantom
-instance CatMonad       (Phantom Type) f
-instance CatExtract     (Phantom Type) f where extract = Phantom
-instance CatExtend      (Phantom Type) f where (<<=) _ = Phantom
-instance CatDuplicate   (Phantom Type) f where duplicate = Phantom
-instance CatComonad     (Phantom Type) f
+instance CatPure'        Unconstrained (Phantom Type) f where catPure = Phantom
+instance CatAp'          Unconstrained (Phantom Type) f where (<**>) _ = Phantom
+instance CatLift2'       Unconstrained (Phantom Type) f where lift2 _ = Phantom
+instance CatApplicative' Unconstrained (Phantom Type) f
+instance CatEmpty'       Unconstrained (Phantom Type) f where catEmpty = Phantom
+instance CatCombine'     Unconstrained (Phantom Type) f where combine = Phantom
+instance CatAlternative' Unconstrained (Phantom Type) f
+instance CatBind'        Unconstrained (Phantom Type) f where (=<<) _ = Phantom
+instance CatJoin'        Unconstrained (Phantom Type) f where join = Phantom
+instance CatMonad'       Unconstrained (Phantom Type) f
+instance CatExtract'     Unconstrained (Phantom Type) f where extract = Phantom
+instance CatExtend'      Unconstrained (Phantom Type) f where (<<=) _ = Phantom
+instance CatDuplicate'   Unconstrained (Phantom Type) f where duplicate = Phantom
+instance CatComonad'     Unconstrained (Phantom Type) f
 
 instance Category c0 => CatLeftFunctor'  Unconstrained Unconstrained c0 (Phantom k) f where left'  _ = Phantom
 instance Category c0 => CatRightFunctor' Unconstrained Unconstrained c0 (Phantom k) f where right' _ = Phantom

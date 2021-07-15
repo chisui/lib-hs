@@ -107,8 +107,8 @@ recip = inv# (proxy# @'Mult)
 mempty :: IdentityOp 'Canonic a => a
 mempty = identity# (proxy# @'Canonic)
 
-class    (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
-instance (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
+class    (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a, FromInt 'Total a) => Iterable a
+instance (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a, FromInt 'Total a) => Iterable a
 
 replicate :: (Alternative f, Iterable i) => i -> a -> f a
 replicate i a = if (i == zero)

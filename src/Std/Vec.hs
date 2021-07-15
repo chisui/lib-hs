@@ -32,11 +32,11 @@ instance CatIsomorphic HASK (Vec (n - 1) a) (HList as) => CatIsomorphic HASK (Ve
         f' (a ::: as) = VCons a (f'' as)
         (t'' :<-> f'') = catIso
 
-instance CatFunctor HASK HASK (Vec n) where
+instance CatFunctor' Unconstrained HASK HASK (Vec n) where
     catMap _ VNil = VNil
     catMap f (VCons a as) = VCons (f a) (catMap f as)
 
-instance Known n => CatPure HASK (Vec n) where
+instance Known n => CatPure' Unconstrained HASK (Vec n) where
     catPure :: forall a. a -> Vec n a
     catPure a = v (val' @n)
       where
@@ -44,19 +44,19 @@ instance Known n => CatPure HASK (Vec n) where
         v 0 = unsafeCoerce VNil
         v n = unsafeCoerce (VCons a (v (n - 1)))
 
-instance CatAp HASK (Vec n) where
+instance CatAp' Unconstrained HASK (Vec n) where
     VNil         <**> VNil         = VNil
     (VCons f fs) <**> (VCons a as) = VCons (f a) (fs <*> as)
     _            <**> _            = error "can't happen"
 
-instance CatLift2 HASK (Vec n) where
+instance CatLift2' Unconstrained HASK (Vec n) where
     lift2 _ VNil VNil = VNil
     lift2 f (VCons a as) (VCons b bs) = VCons (f a b) (lift2 f as bs)
     lift2 _ _ _ = error "can't happen"
 
-instance Pure (Vec n) => CatApplicative HASK (Vec n)
+instance Pure (Vec n) => CatApplicative' Unconstrained HASK (Vec n)
 
-instance Foldable (Vec n) where
+instance Foldable' Unconstrained (Vec n) where
     foldMap _ VNil = mempty
     foldMap f (VCons a as) = f a ++ (foldMap f as)
 

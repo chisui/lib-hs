@@ -19,13 +19,15 @@ import "base" GHC.Generics as Exp
     )
 import "base" GHC.Generics qualified as Base
 
+import "this" Std.Type
 import "this" Std.Cat
 
 
 newtype Generically a = Generically a
   deriving stock (Show, Generic)
   deriving newtype (Base.Eq, Base.Ord)
-  deriving (Functor, Pure, Bind, Join, Ap, Lift2, Applicative, Monad) via Identity
+  deriving (Functor, Pure, Bind, Ap, Lift2, Applicative, Monad) via Identity
+instance CatJoin' Unconstrained HASK Generically where join = to coerce
 
 type GThrough c a = (Generic a, c (Rep a))
 

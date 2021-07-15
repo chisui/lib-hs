@@ -3,16 +3,12 @@
 module Std.Fixed where
 
 import "base" Data.Data
-import "base" GHC.TypeLits
-
-import "ghc-prim" GHC.Prim ( proxy# )
 
 import "this" Std.Ord
 import "this" Std.Generic
 import "this" Std.BinOp
---import "this" Std.Singleton
 import "this" Std.Cat
---import "this" Std.Type
+import "this" Std.Type
 
 {-
 -- | Generalisation of 'div' to any instance of 'Real'
@@ -37,7 +33,7 @@ newtype Fixed (n :: Nat) a = Fixed
   deriving newtype Eq
 
 deriving newtype instance Ord' t a => Ord' t (Fixed n a)
-deriving via Identity instance CatFunctor HASK HASK (Fixed n)
+deriving via Identity instance CatFunctor' Unconstrained HASK HASK (Fixed n)
 
 instance BinOp 'Add a => BinOp 'Add (Fixed n a) where
     type OpTotallity 'Add (Fixed n a) = OpTotallity 'Add a

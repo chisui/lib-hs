@@ -111,11 +111,11 @@ instance Category cat => CatBifunctor' Unconstrained Unconstrained HASK cat HASK
 newtype Left p x a = MkLeft
     { unLeft :: p a x
     }
-instance LeftFunctor p => CatFunctor HASK HASK (Left p x) where
-    catMap f (MkLeft a) = MkLeft (left f a)
+instance LeftFunctor' c Unconstrained p => CatFunctor' c HASK HASK (Left p x) where
+    catMap f (MkLeft a) = MkLeft (left' f a)
 
 newtype Right p x a = MkRight
     { unRight :: p x a
     }
-instance RightFunctor p => CatFunctor HASK HASK (Right p x) where
-    catMap f (MkRight a) = MkRight (right f a)
+instance RightFunctor' Unconstrained c p => CatFunctor' c HASK HASK (Right p x) where
+    catMap f (MkRight a) = MkRight (right' f a)

@@ -83,9 +83,9 @@ instance (CatTerminal cat, CatInitial cat, Terminal cat ~ Initial cat) => CatIni
     type Initial (Iso cat) = Terminal cat
     initiate = initiate :<-> terminate
 
-instance      EndoFunctor       cat f => CatFunctor            (Iso cat) (Iso cat) f where catMap = liftIso catMap catMap
-instance  EndoLeftFunctor' c c' cat f => CatLeftFunctor'  c c' (Iso cat) (Iso cat) f where left'   = liftIso left'   left'
-instance EndoRightFunctor' c c' cat f => CatRightFunctor' c c' (Iso cat) (Iso cat) f where right'  = liftIso right'  right'
+instance      EndoFunctor' c    cat f => CatFunctor'      c    (Iso cat) (Iso cat) f where catMap = liftIso catMap catMap
+instance  EndoLeftFunctor' c c' cat f => CatLeftFunctor'  c c' (Iso cat) (Iso cat) f where left'  = liftIso left'   left'
+instance EndoRightFunctor' c c' cat f => CatRightFunctor' c c' (Iso cat) (Iso cat) f where right' = liftIso right'  right'
 instance    EndoBifunctor' c c' cat f => CatBifunctor'    c c' (Iso cat) (Iso cat) (Iso cat) f
 
 instance CatCommutative cat  f => CatCommutative (Iso cat) f         where commute = commute :<-> commute

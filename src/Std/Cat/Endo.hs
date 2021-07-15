@@ -4,6 +4,7 @@ module Std.Cat.Endo
     ( EndoMorph(..), Endo
     ) where
 
+import "this" Std.Type
 import "this" Std.Ord
 import "this" Std.Debug
 import "this" Std.Cat
@@ -21,7 +22,7 @@ deriving newtype instance Eq     (a `cat` a) => Eq     (EndoMorph cat a)
 deriving newtype instance Ord' t (a `cat` a) => Ord' t (EndoMorph cat a)
 
 
-instance Category cat => CatFunctor (Iso cat) HASK (EndoMorph cat) where
+instance Category cat => CatFunctor' Unconstrained (Iso cat) HASK (EndoMorph cat) where
     catMap = to coerce map'
       where
         map' :: forall a b. Iso cat a b -> a `cat` a -> b `cat` b

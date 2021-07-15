@@ -50,9 +50,11 @@ compare = total2 compare'
 (>)  = total2 (>?)
 (>=) = total2 (>=?)
 
-newtype Ordered a = Ordered a
+newtype Ordered a = Ordered { getOrdered :: a }
   deriving newtype Eq
 deriving newtype instance Ord' t a => Ord' t (Ordered a)
+instance Ord a => Base.Ord (Ordered a) where
+    compare = compare
 
 newtype Unordered a = Unordered a
   deriving newtype Eq

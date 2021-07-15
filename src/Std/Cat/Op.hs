@@ -28,7 +28,7 @@ pam = catMap . Op
 (>$<) = pam
 
 
-instance CatFunctor c0 c1 f => CatFunctor (Op c0) (Op c1) f where catMap (Op f) = Op (catMap f)
+instance CatFunctor' c cat0 cat1 f => CatFunctor' c (Op cat0) (Op cat1) f where catMap (Op f) = Op (catMap f)
 
 
 instance CatLeftFunctor'  c c' c0 c1    f => CatLeftFunctor'  c c' (Op c0) (Op c1) f where left'  (Op f) = Op (left' f)

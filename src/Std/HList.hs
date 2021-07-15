@@ -84,11 +84,11 @@ instance SplittableAt as b => SplittableAt (a ': as) b where
 splitHAtIso :: SplittableAt a b => HList (Concat a b) <-> (HList a, HList b)
 splitHAtIso = splitHAt :<-> uncurry concatH
 
-instance CatFunctor (~>) (->) (HListT '[]) where
+instance CatFunctor' Unconstrained (~>) (->) (HListT '[]) where
     catMap :: forall f g. f ~> g -> HListT '[] f -> HListT '[] g
     catMap _ = to coerce :: HListT '[] f -> HListT '[] g
 
-instance CatFunctor (~>) (->) (HListT as) => CatFunctor (~>) (->) (HListT (a ': as)) where
+instance CatFunctor (~>) (->) (HListT as) => CatFunctor' Unconstrained (~>) (->) (HListT (a ': as)) where
     catMap :: forall f g. f ~> g -> HListT (a ': as) f -> HListT (a ': as) g
     catMap f = to coerce map' :: HListT (a ': as) f -> HListT (a ': as) g
       where
