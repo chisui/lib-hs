@@ -29,7 +29,7 @@ takeSM i s
         
 
 instance Functor m => CatFunctor HASK HASK (StreamT m) where
-    f <$> Stream g s = Stream (map (map f *** f) . g) s
+    f <$$> Stream g s = Stream (map (map f *** f) . g) s
 
 instance (CatApplicative HASK m, CatMonad HASK m) => CatPure HASK (StreamT m) where
     catPure a = let s = Stream (const (pure (s,a))) () in s
@@ -37,7 +37,7 @@ instance (CatApplicative HASK m, CatMonad HASK m) => CatPure HASK (StreamT m) wh
 instance (CatApplicative HASK m, CatMonad HASK m) => CatLift2 HASK (StreamT m) where
     lift2 f a b = f <$> a <*> b
 instance (CatApplicative HASK m, CatMonad HASK m) => CatAp HASK (StreamT m) where
-    mf <*> ma = do
+    mf <**> ma = do
         f <- mf
         a <- ma
         pure (f a)
@@ -59,7 +59,7 @@ instance (CatApplicative HASK m, CatMonad HASK m) => CatJoin HASK (StreamT m) wh
 instance (CatApplicative HASK m, CatMonad HASK m) => CatMonad HASK (StreamT m)
 
 instance (CatApplicative HASK m, CatMonad HASK m) => CatCombine HASK (StreamT m) where
-    (<|>) = const -- just return left since the Stream is infinite
+    combine = fst -- just return left since the Stream is infinite
 
 instance Comonad m => CatExtract HASK (StreamT m) where
     extract (Stream f s) = snd . extract . f $ s

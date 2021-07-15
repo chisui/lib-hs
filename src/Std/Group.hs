@@ -28,10 +28,13 @@ module Std.Group
 
 import "base" Data.Proxy
 import "base" Prelude qualified as Base
+import "base" Data.Semigroup qualified as Base ( Min(..), Max(..) )
+import "base" Data.Monoid qualified as Base ( First(..), Last(..) )
 
 import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
 import "this" Std.BinOp as Exp
+import "this" Std.Ord
 
 
 class    TotalBinOp op a => Magma op a
@@ -108,16 +111,23 @@ instance (CommutativeRing f g a, Abelian g a, Quasigroup f a, Quasigroup f a) =>
 
 -- instances
 
-instance AssociativeOp 'Add Base.Int
-instance Commutative 'Add Base.Int
-instance AssociativeOp 'Mult Base.Int
+instance AssociativeOp  'Add Base.Int
+instance Commutative    'Add Base.Int
+instance AssociativeOp  'Mult Base.Int
 instance DistributiveOp 'Mult 'Add Base.Int
 instance DistributiveOp 'Add 'Mult Base.Int
 
-instance AssociativeOp 'Add Base.Integer
-instance Commutative 'Add Base.Integer
-instance AssociativeOp 'Mult Base.Integer
+instance AssociativeOp  'Add Base.Integer
+instance Commutative    'Add Base.Integer
+instance AssociativeOp  'Mult Base.Integer
 instance DistributiveOp 'Mult 'Add Base.Integer
 instance DistributiveOp 'Add 'Mult Base.Integer
 
 instance AssociativeOp 'Canonic Base.String
+instance Ord a => AssociativeOp 'Canonic (Base.Min a)
+instance Ord a => AssociativeOp 'Canonic (Base.Max a)
+instance Ord a => Idempotent    'Canonic (Base.Min a)
+instance Ord a => Idempotent    'Canonic (Base.Max a)
+instance AssociativeOp 'Canonic (Base.First a)
+instance AssociativeOp 'Canonic (Base.Last a)
+

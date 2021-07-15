@@ -9,6 +9,7 @@ module Std.Generic
     , absurdV1
     ) where
 
+import "base" Prelude qualified as Base
 import "base" Text.Show
 import "base" Data.Void
 import "base" Data.Either ( Either(..), either )
@@ -23,6 +24,7 @@ import "this" Std.Cat
 
 newtype Generically a = Generically a
   deriving stock (Show, Generic)
+  deriving newtype (Base.Eq, Base.Ord)
   deriving (Functor, Pure, Bind, Join, Ap, Lift2, Applicative, Monad) via Identity
 
 type GThrough c a = (Generic a, c (Rep a))
@@ -32,8 +34,8 @@ fromSum f _ (L1 a) = f a
 fromSum _ f (R1 a) = f a
 
 
-rep :: forall a x. Generic a => Rep a x <-> a
-rep = Base.to :<-> Base.from
+rep :: forall a x. Generic a => a <-> Rep a x
+rep = Base.from :<-> Base.to
 
 newtype Generically1 f a = Generically1 (f a)
   deriving stock (Show, Generic, Generic1)

@@ -11,7 +11,7 @@ import "this" Std.Cat.Iso
 import "this" Std.Cat.Op
 
 
-class CatArrow (cat :: k -> k -> Type) (f :: k0 -> k0 -> k)  (g :: k0 -> k0 -> k) where
+class Category cat => CatArrow (cat :: k -> k -> Type) (f :: k0 -> k0 -> k)  (g :: k0 -> k0 -> k) where
     catArr :: (a `f` b) `cat` (a `g` b)
 
 type Arrow = CatArrow HASK
@@ -22,8 +22,8 @@ arr = catArr
 arrow :: (CatArrow cat f g, CatArrow cat g f) => Iso cat (a `f` b) (a `g` b)
 arrow = catArr :<-> catArr
 
-instance CatArrow HASK (Iso cat) cat where catArr = to
-instance CatArrow HASK (Iso cat) (Op cat) where catArr = Op . from
+instance Category cat => CatArrow HASK (Iso cat) cat where catArr = to
+instance Category cat => CatArrow HASK (Iso cat) (Op cat) where catArr = Op . from
 
 instance Base.Arrow cat => CatArrow HASK HASK (Basic2 cat) where
     catArr :: forall a b. (a -> b) -> Basic2 cat a b

@@ -77,7 +77,7 @@ instance (Singleton a, Singleton b) => Singleton (a, b) where
 instance (Known a, Known b) => Known '(a, b) where
     val _ = (val' @a, val' @b)
     val# _ = (val' @a, val' @b)
-instance (Promote t0 a, Promote t1 b, Min t0 t1 ~ t2) => Promote t2 (a, b) where
+instance (Promote t0 a, Promote t1 b, MinTotallity t0 t1 ~ t2) => Promote t2 (a, b) where
     promote _ (a, b) = zipRes merge (promote (Proxy @a) a) (promote (Proxy @b) b)
       where
         merge :: SomeSingleton a -> SomeSingleton b -> SomeSingleton (a, b)
@@ -90,7 +90,7 @@ instance (Singleton a, Singleton b, Singleton c) => Singleton (a, b, c) where
 instance (Known a, Known b, Known c) => Known '(a, b, c) where
     val _ = (val' @a, val' @b, val' @c)
     val# _ = (val' @a, val' @b, val' @c)
-instance (Promote t0 a, Promote t1 b, Promote t2 c, (t0 `Min` t1 `Min` t2) ~ t3) => Promote t3 (a, b, c) where
+instance (Promote t0 a, Promote t1 b, Promote t2 c, (t0 `MinTotallity` t1 `MinTotallity` t2) ~ t3) => Promote t3 (a, b, c) where
     promote _ (a, b, c) = zipRes3 merge (promote (Proxy @a) a) (promote (Proxy @b) b) (promote (Proxy @c) c)
       where
         merge :: SomeSingleton a -> SomeSingleton b -> SomeSingleton c -> SomeSingleton (a, b, c)
@@ -103,7 +103,7 @@ instance (Singleton a, Singleton b, Singleton c, Singleton d) => Singleton (a, b
 instance (Known a, Known b, Known c, Known d) => Known '(a, b, c, d) where
     val _ = (val' @a, val' @b, val' @c, val' @d)
     val# _ = (val' @a, val' @b, val' @c, val' @d)
-instance (Promote t0 a, Promote t1 b, Promote t2 c, Promote t3 d, (t0 `Min` t1 `Min` t2 `Min` t3) ~ t4) => Promote t4 (a, b, c, d) where
+instance (Promote t0 a, Promote t1 b, Promote t2 c, Promote t3 d, (t0 `MinTotallity` t1 `MinTotallity` t2 `MinTotallity` t3) ~ t4) => Promote t4 (a, b, c, d) where
     promote _ (a, b, c, d) = zipRes4 merge (promote (Proxy @a) a) (promote (Proxy @b) b) (promote (Proxy @c) c) (promote (Proxy @d) d)
       where
         merge :: SomeSingleton a -> SomeSingleton b -> SomeSingleton c -> SomeSingleton d -> SomeSingleton (a, b, c, d)

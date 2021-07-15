@@ -12,7 +12,6 @@ import "this" Std.Cat.NaturalTransformation
 
 
 class Category cat => CatCommutative (cat :: k1 -> k1 -> Type) (f :: k0 -> k0 -> k1) where
-    -- associate :: ((a `f` b) `f` c) `cat` (a `f` (b `f` c))
     commute :: (a `f` b) `cat` (b `f` a)
 
 

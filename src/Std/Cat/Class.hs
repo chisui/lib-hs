@@ -3,7 +3,15 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Std.Cat.Class where
+module Std.Cat.Class
+    ( HASK
+    , Semigroupoid(..)
+    , CatId(..), ($)
+    , Category
+    , Groupoid(..)
+    , Basic2(..)
+    , type (:~:)(..)
+    ) where
 
 import "base" Data.Coerce qualified as Base
 import "base" Control.Category qualified as Base
@@ -48,4 +56,7 @@ deriving via (Basic2 HASK) instance Category HASK
 
 instance Semigroupoid Const where _ . Const a = Const a
 instance Semigroupoid (,) where (_,c) . (a,_) = (a, c)
+
 instance Semigroupoid (:~:) where Refl . Refl = Refl
+instance CatId (:~:) where id = Refl
+instance Category (:~:)

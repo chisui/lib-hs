@@ -7,6 +7,7 @@ import "base" Prelude ( Integer )
 import "base" Unsafe.Coerce
 
 import "this" Std.HList
+import "this" Std.Cat.Foldable
 import "this" Std.Type
 import "this" Std.Singleton
 import "this" Std.Debug
@@ -44,9 +45,9 @@ instance Known n => CatPure HASK (Vec n) where
         v n = unsafeCoerce (VCons a (v (n - 1)))
 
 instance CatAp HASK (Vec n) where
-    VNil <*> VNil = VNil
-    (VCons f fs) <*> (VCons a as) = VCons (f a) (fs <*> as)
-    _ <*> _ = error "can't happen"
+    VNil         <**> VNil         = VNil
+    (VCons f fs) <**> (VCons a as) = VCons (f a) (fs <*> as)
+    _            <**> _            = error "can't happen"
 
 instance CatLift2 HASK (Vec n) where
     lift2 _ VNil VNil = VNil
@@ -54,6 +55,10 @@ instance CatLift2 HASK (Vec n) where
     lift2 _ _ _ = error "can't happen"
 
 instance Pure (Vec n) => CatApplicative HASK (Vec n)
+
+instance Foldable (Vec n) where
+    foldMap _ VNil = mempty
+    foldMap f (VCons a as) = f a ++ (foldMap f as)
 
 instance (Known n, Magma op a) => BinOp op (Vec n a) where
     op# p = lift2 (op# p)

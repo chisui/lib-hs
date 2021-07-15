@@ -2,7 +2,7 @@
 module Std.Basic
     ( Basic(..), Basic1(..), Basic2(..)
     , Unsafe(..), Unsafe1(..)
-    , Monoidal(..)
+    , Monoidal(..), Newtype(..)
     , Numeric(..), PartialNumeric(..)
     , errorToPartial0, liftTotal0
     , errorToPartial1, liftTotal1
@@ -20,13 +20,13 @@ import "this" Std.Partial
 import "this" Std.Cat
 
 
-newtype Basic          a = Basic          a deriving newtype Eq
-newtype Newtype        a = Newtype        a deriving newtype Eq
-newtype Unsafe         a = Unsafe         a deriving newtype Eq
-newtype Unsafe1        a = Unsafe1        a deriving newtype Eq
-newtype Monoidal       a = Monoidal       a deriving newtype Eq
-newtype Numeric        a = Numeric        a deriving newtype Eq
-newtype PartialNumeric a = PartialNumeric a deriving newtype Eq
+newtype Basic          a = Basic          { getBasic          :: a } deriving newtype Eq
+newtype Newtype        a = Newtype        { getNewtype        :: a } deriving newtype Eq
+newtype Unsafe         a = Unsafe         { getUnsafe         :: a } deriving newtype Eq
+newtype Unsafe1        a = Unsafe1        { getUnsafe1        :: a } deriving newtype Eq
+newtype Monoidal       a = Monoidal       { getMonoidal       :: a } deriving newtype Eq
+newtype Numeric        a = Numeric        { getNumeric        :: a } deriving newtype Eq
+newtype PartialNumeric a = PartialNumeric { getPartialNumeric :: a } deriving newtype Eq
 
 errorToPartial0 :: forall a. a -> Res 'Partial a
 errorToPartial0 x = toRes' (unsafePerformIO (try (evaluate x)))

@@ -2,6 +2,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Cat.Kleisli where
 
+import "base" Data.Void
+
+import "this" Std.Type
 import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
 import "this" Std.Cat.Bifunctor
@@ -10,6 +13,7 @@ import "this" Std.Cat.Monad
 import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Closed
+import "this" Std.Cat.Limit
 import "this" Std.Cat.Distributive
 import "this" Std.Cat.Associative
 import "this" Std.Cat.Op
@@ -49,7 +53,7 @@ instance ( CatMonad cat m
     type Product (CatKleisli cat m) = Product cat
     fst  = arr @cat fst
     snd  = arr @cat snd
-    copy = arr @cat copy
+    diagonal = arr @cat diagonal
 
 instance ( CatMonad cat m
          , Cocartesian cat
@@ -58,7 +62,7 @@ instance ( CatMonad cat m
     type Coproduct (CatKleisli cat m) = Coproduct cat
     lft  = arr @cat lft
     rght = arr @cat rght
-    fuse = arr @cat fuse
+    codiagonal = arr @cat codiagonal
 
 instance Distributive m => Closed (Kleisli m) where
     type Exp (Kleisli m) = Kleisli m
@@ -66,8 +70,22 @@ instance Distributive m => Closed (Kleisli m) where
     curry   = liftKleisli $ \f -> catPure . Kleisli . curry f
     uncurry = liftKleisli $ \f (a, b) -> ($ b) . unKleisli =<< f a
 
+instance Monad m => CatTerminal (Kleisli m) where
+    type Terminal (Kleisli m) = Terminal HASK
+    terminate = Kleisli (catPure . terminate)
+instance Monad m => CatInitial (Kleisli m) where
+    type Initial (Kleisli m) = Initial HASK
+    initiate = Kleisli absurd
+
 instance (Associative f, LeftFunctor' c0 c1 f, Distributive m) => CatLeftFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
     left' = liftKleisli $ \f -> map unLeft . distribute . map f . MkLeft
 instance (Associative f, Distributive m, RightFunctor' c0 c1 f) => CatRightFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
     right' = liftKleisli $ \f -> map unRight . distribute . map f . MkRight
 instance (Associative f, Distributive m, Bifunctor' c0 c1 f) => CatBifunctor' c0 c1 (Kleisli m) (Kleisli m) (Kleisli m) f
+
+
+instance CatMonad cat m => CatLeftFunctor' Unconstrained Unconstrained (Op cat) HASK (CatKleisli cat m) where
+    left' (Op f) (Kleisli g) = Kleisli (g . f)
+instance CatMonad cat m => CatRightFunctor' Unconstrained Unconstrained cat HASK (CatKleisli cat m) where
+    right' f (Kleisli g) = Kleisli (catPure . f <=< g)
+instance CatMonad cat m => CatBifunctor' Unconstrained Unconstrained (Op cat) cat HASK (CatKleisli cat m)

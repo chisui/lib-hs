@@ -101,9 +101,9 @@ deriving via (Basic2 Base.Either) instance CatBifunctor' Unconstrained Unconstra
 
 instance CatLeftFunctor' Unconstrained Unconstrained HASK HASK Base.Const where
     left' f (Base.Const a) = Base.Const (f a)
-instance CatRightFunctor' Unconstrained Unconstrained HASK HASK Base.Const where
+instance Category cat => CatRightFunctor' Unconstrained Unconstrained cat HASK Base.Const where
     right' _ (Base.Const a) = Base.Const a
-deriving via (Basic2 Base.Const) instance CatBifunctor' Unconstrained Unconstrained HASK HASK HASK Base.Const
+instance Category cat => CatBifunctor' Unconstrained Unconstrained HASK cat HASK Base.Const
 
 
 

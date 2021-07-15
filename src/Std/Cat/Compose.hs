@@ -31,8 +31,8 @@ instance (Pure f, Pure g) => CatPure HASK (f . g) where
     catPure = to coerce (catPure . catPure :: a -> f (g a))
 
 instance (Lift2 f, Ap g) => CatAp HASK (f . g) where
-    (<*>) :: forall a b. (f . g) (a -> b) -> (f . g) a -> (f . g) b
-    (<*>) = to coerce (lift2 (<*>) :: f (g (a -> b))-> f (g a) -> f (g b))
+    (<**>) :: forall a b. (f . g) (a -> b) -> (f . g) a -> (f . g) b
+    (<**>) = to coerce (lift2 (<**>) :: f (g (a -> b))-> f (g a) -> f (g b))
 
 instance (Applicative f, Applicative g) => CatLift2 HASK (f . g) where
     lift2 f a b = f <$> a <*> b

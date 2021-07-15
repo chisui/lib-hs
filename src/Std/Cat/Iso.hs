@@ -13,18 +13,24 @@ import "this" Std.Cat.Bifunctor
 import "this" Std.Cat.NaturalTransformation
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
+import "this" Std.Cat.Limit
 import "this" Std.Cat.Commutative
 import "this" Std.Cat.Product
 import "this" Std.Cat.Op
---import "this" Std.Cat.Arrow
+import "this" Std.Cat.ProductCat
 import "this" Std.Type
 
 
-data Iso cat a b = (:<->)
-    { to   :: a `cat` b
-    , from :: b `cat` a
-    }
+newtype Iso cat a b = Iso (ProdCat (,) cat (Op cat) '(a, a) '(b, b))
+pattern (:<->) :: Category cat => a `cat` b -> b `cat` a -> Iso cat a b
+pattern t :<-> f = Iso (ProdCat (t, Op f))
 infix 1 :<->
+{-# COMPLETE (:<->) #-}
+
+to :: Category cat => Iso cat a b -> a `cat` b
+to (t :<-> _) = t
+from :: Category cat => Iso cat a b -> b `cat` a
+from (_ :<-> f) = f
 
 type (<->) = Iso HASK
 infixr 1 <->
@@ -32,7 +38,8 @@ type (<~>) = Iso (~>)
 infixr 0 <~>
 
 
-liftIso :: (a `cat` b -> a' `cat'` b')
+liftIso :: (Category cat, Category cat')
+        => (a `cat` b -> a' `cat'` b')
         -> (b `cat` a -> b' `cat'` a')
         -> Iso cat a b -> Iso cat' a' b'
 liftIso f g h = f (to h) :<-> g (from h)
@@ -64,10 +71,17 @@ coproduct1 = coerce
 same :: forall a b. a == b => a <-> b
 same = case eq @a @b of Refl -> id
 
-instance   Semigroupoid cat   => Semigroupoid        (Iso cat)   where f . g = to f . to g :<-> from g . from f
-instance          CatId cat   => CatId               (Iso cat)   where id = id :<-> id
-instance       Category cat   => Category            (Iso cat)
-instance       Category cat   => Groupoid            (Iso cat)   where invCat f = from f :<-> to f
+instance Category cat => Semigroupoid (Iso cat) where f . g = to f . to g :<-> from g . from f
+instance Category cat => CatId        (Iso cat) where id = id :<-> id
+instance Category cat => Category     (Iso cat)
+instance Category cat => Groupoid     (Iso cat) where invCat f = from f :<-> to f
+
+instance (CatTerminal cat, CatInitial cat, Terminal cat ~ Initial cat) => CatTerminal (Iso cat) where
+    type Terminal (Iso cat) = Initial cat
+    terminate = terminate :<-> initiate
+instance (CatTerminal cat, CatInitial cat, Terminal cat ~ Initial cat) => CatInitial (Iso cat) where
+    type Initial (Iso cat) = Terminal cat
+    initiate = initiate :<-> terminate
 
 instance      EndoFunctor       cat f => CatFunctor            (Iso cat) (Iso cat) f where catMap = liftIso catMap catMap
 instance  EndoLeftFunctor' c c' cat f => CatLeftFunctor'  c c' (Iso cat) (Iso cat) f where left'   = liftIso left'   left'

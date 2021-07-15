@@ -1,13 +1,17 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Std.BinOp where
 
 import "base" Prelude qualified as Base
+import "base" Data.Semigroup qualified as Base ( Min(..), Max(..) )
+import "base" Data.Monoid qualified as Base( First(..), Last(..) )
 import "base" Data.Coerce ( Coercible )
 
 import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
 import "this" Std.Literal
+import "this" Std.IfThenElse
 import "this" Std.Ord
 import "this" Std.Cat
 import "this" Std.Basic
@@ -100,8 +104,16 @@ recip :: InverseOp 'Mult a => a -> OpRes (InvOp 'Mult a) a
 recip = inv# (proxy# @'Mult)
 
 
-class    (Eq a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
-instance (Eq a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
+mempty :: IdentityOp 'Canonic a => a
+mempty = identity# (proxy# @'Canonic)
+
+class    (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
+instance (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a) => Iterable a
+
+replicate :: (Alternative f, Iterable i) => i -> a -> f a
+replicate i a = if (i == zero)
+    then empty
+    else cons a (replicate (pred i) a)
 
 instance Base.Num a => BinOp 'Add (Numeric a) where
     type OpTotallity 'Add (Numeric a) = 'Total
@@ -176,6 +188,12 @@ instance Base.Semigroup a => BinOp 'Canonic (Monoidal a) where
 instance Base.Monoid a => IdentityOp 'Canonic (Monoidal a) where
     identity# _ = to coerce (Base.mempty :: a)
 
+instance TotalBinOp 'Canonic a => Base.Semigroup (Monoidal a) where
+    (<>) = to coerce ((++) :: a -> a -> a)
+
+instance (TotalBinOp 'Canonic a, IdentityOp 'Canonic a) => Base.Monoid (Monoidal a) where
+    mempty = to coerce (mempty :: a)
+
 
 opCoerced# :: forall a op b. (Coercible a b, BinOp op a) => Proxy# a -> Proxy# op -> b -> b -> DirectRes (OpTotallity op a) b
 opCoerced# _ p a b = mapDirectRes (Proxy @(OpTotallity op a))
@@ -234,3 +252,15 @@ deriving via (PartialNumeric Base.Double) instance BinOp 'Div  Base.Double
 
 deriving via (Monoidal Base.String) instance BinOp      'Canonic Base.String
 deriving via (Monoidal Base.String) instance IdentityOp 'Canonic Base.String
+
+instance Ord a => BinOp 'Canonic (Base.Min a) where
+    op# _ a b = if a <= b then a else b 
+instance Ord a => BinOp 'Canonic (Base.Max a) where
+    op# _ a b = if a <= b then a else b 
+
+
+deriving via (Monoidal (Base.First a)) instance BinOp      'Canonic (Base.First a)
+deriving via (Monoidal (Base.First a)) instance IdentityOp 'Canonic (Base.First a)
+
+deriving via (Monoidal (Base.Last a)) instance BinOp      'Canonic (Base.Last a)
+deriving via (Monoidal (Base.Last a)) instance IdentityOp 'Canonic (Base.Last a)

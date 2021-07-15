@@ -16,5 +16,3 @@ type MonadFail = CatMonadFail HASK
 instance Base.MonadFail m => CatMonadFail HASK (Basic1 m) where
     fail :: forall a. String -> Basic1 m a
     fail = to coerce (Base.fail :: String -> m a)
-
-deriving via (Basic1 Base.IO) instance CatMonadFail HASK Base.IO

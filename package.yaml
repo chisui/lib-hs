@@ -14,46 +14,77 @@ dependencies:
 - hashable
 - haskell-src-meta
 
+tests:
+  spec:
+    main: test/Spec.hs
+    dependencies:
+    - libhs
+
 library:
   source-dirs: src
   ghc-options: -Werror
   exposed-modules:
-  - Std.Literal
-  - Std.Group
+  - Std
+  - Std.Basic
+  - Std.BinOp
   - Std.Bool
+  - Std.Cat
   - Std.Debug
+  - Std.Either
+  - Std.Extremum
+  - Std.Fixed
+  - Std.FreeGroup
+  - Std.Generic
+  - Std.Generic.Simple
+  - Std.Group
+  - Std.IfThenElse
+  - Std.IO
+  - Std.List
+  - Std.Literal
+  - Std.Maybe
+  - Std.Ord
   - Std.Partial
-  default-extensions:
-  - NoImplicitPrelude
-  - NoStarIsType
-  # imports
-  - ImportQualifiedPost
-  - PackageImports
-  # syntax
-  - RebindableSyntax
-  - TupleSections
-  - ScopedTypeVariables
-  - TypeApplications
-  - LambdaCase
-  - InstanceSigs
-  # deriving
-  - StandaloneDeriving
-  - GeneralizedNewtypeDeriving
-  - DeriveGeneric
-  - DerivingVia
-  - DeriveDataTypeable
-  # type stuff
-  - TypeOperators
-  - TypeFamilies
-  - PolyKinds
-  - ConstraintKinds
-  - DataKinds
-  - MultiParamTypeClasses
-  - TypeSynonymInstances
-  - FlexibleInstances
-  - FlexibleContexts
-  - FunctionalDependencies
-  - QuantifiedConstraints
-  - RankNTypes
-  - GADTs
+  - Std.Quote
+  - Std.Singleton
+  - Std.Some
+  - Std.Text
+  - Std.Tuple
+  - Std.TypeError
+  - Std.Type
+  - Std.Union
+  - Std.Vec
 
+
+default-extensions:
+- NoImplicitPrelude
+- NoStarIsType
+# imports
+- ImportQualifiedPost
+- PackageImports
+# syntax
+- RebindableSyntax
+- TupleSections
+- ScopedTypeVariables
+- TypeApplications
+- LambdaCase
+- InstanceSigs
+# deriving
+- StandaloneDeriving
+- GeneralizedNewtypeDeriving
+- DeriveGeneric
+- DerivingVia
+- DeriveDataTypeable
+# type stuff
+- TypeOperators
+- TypeFamilies
+- PolyKinds
+- ConstraintKinds
+- DataKinds
+- MultiParamTypeClasses
+- TypeSynonymInstances
+- FlexibleInstances
+- FlexibleContexts
+- FunctionalDependencies
+- QuantifiedConstraints
+- RankNTypes
+- GADTs

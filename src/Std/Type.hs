@@ -23,7 +23,7 @@ import "base" Data.Type.Equality as Exp (type (:~:) (Refl))
 import "base" Data.Type.Bool ( type (&&) )
 import "base" Data.Kind as Exp ( Type, Constraint )
 import "base" GHC.Exts as Exp ( Any )
-import "base" GHC.TypeLits as Exp
+import "base" GHC.TypeLits as Exp ( Symbol, KnownSymbol, Nat, KnownNat, type (+), type(-) )
 
 import "ghc-prim" GHC.Prim as Exp ( proxy#, Proxy# )
 

@@ -17,9 +17,6 @@ class EndoFunctor cat f => CatExtract cat f where
     extract :: f a `cat` a
 type Extract = CatExtract HASK
 
-instance CatPure cat f => CatExtract (Op cat) f where
-    extract = Op catPure
-
 class CatExtend cat m where
     (<<=) :: m a `cat` b -> m a `cat` m b
 type Extend = CatExtend HASK
@@ -27,20 +24,13 @@ type Extend = CatExtend HASK
 (=>>) :: Extend m => m a -> (m a -> b) -> m b
 (=>>) = flip (<<=)
 
-instance CatBind cat m => CatExtend (Op cat) m where
-    (<<=) (Op f) = Op ((=<<) f)
 
 class EndoFunctor cat f => CatDuplicate cat f where
     duplicate :: f a `cat` f (f a)
 type Duplicate = CatDuplicate HASK
 
-instance CatJoin cat f => CatDuplicate (Op cat) f where
-    duplicate = Op join
-
 class (Category cat, CatExtract cat f, CatExtend cat f, CatDuplicate cat f) => CatComonad cat f
 type Comonad = CatComonad HASK
-
-instance CatMonad cat m => CatComonad (Op cat) m
 
 class (CatAp cat f, CatComonad cat f) => CatComonadApply cat f
 
@@ -52,9 +42,13 @@ type Unlift2 = CatUnlift2 HASK
 class (CatExtract cat f, CatUnlift2 cat f) => CatCoapplicative cat f
 type Coapplicative = CatCoapplicative HASK
 
+instance CatPure  cat f => CatExtract   (Op cat) f where extract = Op catPure
+instance CatJoin  cat f => CatDuplicate (Op cat) f where duplicate = Op join
+instance CatBind  cat f => CatExtend    (Op cat) f where (<<=) (Op f) = Op ((=<<) f)
+instance CatMonad cat f => CatComonad   (Op cat) f
 
-instance CatExtract       HASK Identity where extract = coerce
-instance CatExtend        HASK Identity where (<<=) = coerce
+instance CatExtract       HASK Identity where extract   = coerce
+instance CatExtend        HASK Identity where (<<=)     = coerce
 instance CatDuplicate     HASK Identity where duplicate = coerce
 instance CatComonad       HASK Identity
 instance CatComonadApply  HASK Identity

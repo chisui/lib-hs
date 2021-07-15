@@ -22,5 +22,5 @@ instance CatIsomorphic HASK (Maybe a) (Either () a) where
 instance CatIsomorphic HASK (Maybe a) (Res 'Partial a) where
     catIso = unpackMaybe :<-> unpackRes
 
-unpackMaybe :: Alternative f => Maybe a -> f a
+unpackMaybe :: forall f a. Alternative f => Maybe a -> f a
 unpackMaybe = maybe empty pure

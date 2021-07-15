@@ -74,15 +74,15 @@ zipHWith f x y = HListT (zipHWith' x y)
     zipHWith' (a ::: as) (b ::: bs) = f a b ::: zipHWith' as bs
 
 
-class Splittable a b where
-    splitH :: HList (Concat a b) -> (HList a, HList b)
-instance Splittable '[] b where
-    splitH = (HNil,)
-instance Splittable as b => Splittable (a ': as) b where
-    splitH (a ::: as) = let (l', r') = splitH as in (a ::: l', r')
+class SplittableAt a b where
+    splitHAt :: HList (Concat a b) -> (HList a, HList b)
+instance SplittableAt '[] b where
+    splitHAt = (HNil,)
+instance SplittableAt as b => SplittableAt (a ': as) b where
+    splitHAt (a ::: as) = let (l', r') = splitHAt as in (a ::: l', r')
 
-splitHIso :: Splittable a b => HList (Concat a b) <-> (HList a, HList b)
-splitHIso = splitH :<-> uncurry concatH
+splitHAtIso :: SplittableAt a b => HList (Concat a b) <-> (HList a, HList b)
+splitHAtIso = splitHAt :<-> uncurry concatH
 
 instance CatFunctor (~>) (->) (HListT '[]) where
     catMap :: forall f g. f ~> g -> HListT '[] f -> HListT '[] g
@@ -105,5 +105,36 @@ instance (Eq a, Eq (HList as)) => Eq (HList (a ': as)) where
 
 instance Ord' 'Total (HList '[]) where
     compare' _ _ = pure EQ
-instance (Ord' u a, Ord' v (HList as), t ~ Min u v) => Ord' t (HList (a ': as)) where
+instance (Ord' u a, Ord' v (HList as), t ~ MinTotallity u v) => Ord' t (HList (a ': as)) where
     compare' (a ::: as) (b ::: bs) = zipRes (++) (compare' a b) (compare' as bs)
+
+
+instance BinOp 'Canonic (HList '[]) where
+    op# _ HNil HNil = HNil
+instance ( TotalBinOp 'Canonic a
+         , TotalBinOp 'Canonic (HList as)) => BinOp 'Canonic (HList (a ': as)
+         ) where
+    op# p (a ::: as) (b ::: bs) = zip' (:::) (op# p a b) (op# p as bs)
+      where
+        zip' :: (a -> HList as -> HList (a ': as))
+             -> OpRes 'Canonic a
+             -> OpRes 'Canonic (HList as)
+             -> OpRes 'Canonic (HList (a : as))
+        zip' = zipDirectRes#
+                (proxy# @(OpTotallity 'Canonic a))
+                (proxy# @(OpTotallity 'Canonic (HList as)))
+
+instance IdentityOp 'Canonic (HList '[]) where
+    identity# _ = HNil
+instance ( TotalBinOp 'Canonic a, IdentityOp 'Canonic a
+         , TotalBinOp 'Canonic (HList as), IdentityOp 'Canonic (HList as)
+         ) => IdentityOp 'Canonic (HList (a ': as)) where
+    identity# p = zip' (:::) (identity# p) (identity# p)
+      where
+        zip' :: (a -> HList as -> HList (a ': as))
+             -> OpRes 'Canonic a
+             -> OpRes 'Canonic (HList as)
+             -> OpRes 'Canonic (HList (a : as))
+        zip' = zipDirectRes#
+                (proxy# @(OpTotallity 'Canonic a))
+                (proxy# @(OpTotallity 'Canonic (HList as)))

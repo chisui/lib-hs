@@ -1,4 +1,7 @@
-module Std.Cat.Adjunction where
+module Std.Cat.Adjunction
+    ( CatAdjunction(..), EndoAdjunction, Adjunction
+    , defaultAjoint
+    ) where
 
 import "base" Data.Functor.Identity
 

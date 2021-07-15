@@ -6,8 +6,8 @@ import "this" Std.Cat.Class
 import "this" Std.Cat.Iso
 
 
-class    CatFunctor (Iso c0) c1 f => CatInvariant c0 c1 f
-instance CatFunctor (Iso c0) c1 f => CatInvariant c0 c1 f
+class    (Category c0, Category c1, CatFunctor (Iso c0) c1 f) => CatInvariant c0 c1 f
+instance (Category c0, Category c1, CatFunctor (Iso c0) c1 f) => CatInvariant c0 c1 f
 
 type Invariant = CatInvariant HASK HASK
 

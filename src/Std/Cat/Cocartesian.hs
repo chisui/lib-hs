@@ -12,13 +12,13 @@ class EndoBifunctor cat (Coproduct cat) => Cocartesian (cat :: k -> k -> Type) w
     lft  :: a `cat` Coproduct cat a b
     rght :: b `cat` Coproduct cat a b
 
-    fuse :: Coproduct cat a a `cat` a
-    fuse = id ||| id
+    codiagonal :: Coproduct cat a a `cat` a
+    codiagonal = id ||| id
 
     (|||) :: b `cat` d -> c `cat` d -> Coproduct cat b c `cat` d
     infixr 2 |||
-    f ||| g = fuse . catBimap f g
-    {-# MINIMAL lft, rght, (fuse | (|||)) #-}
+    f ||| g = codiagonal . catBimap f g
+    {-# MINIMAL lft, rght, (codiagonal | (|||)) #-}
 
 instance Cocartesian HASK where
     type Coproduct HASK = Either

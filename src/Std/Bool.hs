@@ -20,7 +20,6 @@ import "ghc-prim" GHC.Prim ( proxy# )
 
 import "this" Std.BinOp
 import "this" Std.Group
-import "this" Std.Partial
 import "this" Std.Ord
 import "this" Std.Basic
 
@@ -109,8 +108,6 @@ instance BinOp 'Impl Bool where
     op# _ True  True = True
     op# _ False _    = True
     op# _ _     _    = False
-
-deriving via (Basic Bool) instance Ord' 'Total Bool
 
 deriving via (Monoidal Ordering) instance BinOp       'Canonic Ordering
 deriving via (Monoidal Ordering) instance IdentityOp  'Canonic Ordering

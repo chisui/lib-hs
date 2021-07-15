@@ -1,6 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MagicHash #-}
-module Std.Cat.Endo where
+module Std.Cat.Endo
+    ( EndoMorph(..), Endo
+    ) where
 
 import "this" Std.Ord
 import "this" Std.Debug
@@ -19,7 +21,7 @@ deriving newtype instance Eq     (a `cat` a) => Eq     (EndoMorph cat a)
 deriving newtype instance Ord' t (a `cat` a) => Ord' t (EndoMorph cat a)
 
 
-instance Semigroupoid cat => CatFunctor (Iso cat) HASK (EndoMorph cat) where
+instance Category cat => CatFunctor (Iso cat) HASK (EndoMorph cat) where
     catMap = to coerce map'
       where
         map' :: forall a b. Iso cat a b -> a `cat` a -> b `cat` b

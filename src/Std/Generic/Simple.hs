@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE MagicHash #-}
 module Std.Generic.Simple where
 
@@ -63,7 +63,7 @@ instance ( SimplifySumRep (IsSum l) l, SimplifySumRep (IsSum r) r
          ) => SimplifySumRep 'True (l :+: r) where
     type SimplifyedSumRep 'True (l :+: r) = Concat (SimplifyedSumRep (IsSum l) l) (SimplifyedSumRep (IsSum r) r)
     simpleSum :: forall x. Proxy# 'True -> (l :+: r) x <-> Union (Concat (SimplifyedSumRep (IsSum l) l) (SimplifyedSumRep (IsSum r) r))
-    simpleSum _ = invCat splitUIso . (l *** r) . (iso :: (l :+: r) x <-> Either (l x) (r x))
+    simpleSum _ = invCat splitUAtIso . (l *** r) . (iso :: (l :+: r) x <-> Either (l x) (r x))
       where
         l = simpleSum (proxy# @(IsSum l))
         r = simpleSum (proxy# @(IsSum r))
@@ -82,11 +82,11 @@ type family IsPrd l :: Bool where
 
 instance ( SimplifyPrdRep (IsPrd l) l
          , SimplifyPrdRep (IsPrd r) r
-         , Splittable (SimplifyedPrdRep (IsPrd l) l) (SimplifyedPrdRep (IsPrd r) r)
+         , SplittableAt (SimplifyedPrdRep (IsPrd l) l) (SimplifyedPrdRep (IsPrd r) r)
          ) => SimplifyPrdRep 'True (l :*: r) where
     type SimplifyedPrdRep 'True (l :*: r) = Concat (SimplifyedPrdRep (IsPrd l) l) (SimplifyedPrdRep (IsPrd r) r)
     simplifyPrd :: forall x. Proxy# 'True -> (l :*: r) x <-> HList (Concat (SimplifyedPrdRep (IsPrd l) l) (SimplifyedPrdRep (IsPrd r) r))
-    simplifyPrd _ = invCat splitHIso . (l *** r) . iso @(l x, r x)
+    simplifyPrd _ = invCat splitHAtIso . (l *** r) . iso @(l x, r x)
       where
         l = simplifyPrd (proxy# @(IsPrd l))
         r = simplifyPrd (proxy# @(IsPrd r))
@@ -97,6 +97,6 @@ instance SimplifyRep rep => SimplifyPrdRep 'False rep where
 
 type SimpleRep a = SimplifyedRep (Rep a)
 class    (Generic a, SimplifyRep (Rep a)) => GenericSimple a where simpleRep :: a <-> SimpleRep a
-instance (Generic a, SimplifyRep (Rep a)) => GenericSimple a where simpleRep = simple . invCat rep
+instance (Generic a, SimplifyRep (Rep a)) => GenericSimple a where simpleRep = simple . rep
 
 type GThroughSimple c a = (GenericSimple a, c (SimpleRep a))

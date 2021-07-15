@@ -8,7 +8,7 @@ module Std.Union
     ( Union(..) , UnionT
     , inject, injectAt, injectAt#, project
     , decompose, decomposeLast
-    , weaken, splitU, splitUIso
+    , weaken, splitUAt, splitUAtIso
     , mapUnion
     , type (:<), Element
     , type (:<:), Elements
@@ -100,15 +100,15 @@ weaken :: forall a b. (a :<: b) => Union a -> Union b
 weaken (UnsafeInternalUnion n a) = UnsafeInternalUnion n' a
   where n' = fromJust . elemIndex n . map fromIntegral $ val' @(ElemIndices a b)
 
-splitU :: forall a b proxy. Known (Length a) => proxy '(a, b) -> Union (Concat a b) -> Either (Union a) (Union b)
-splitU _ (UnsafeInternalUnion n a)
+splitUAt :: forall a b proxy. Known (Length a) => proxy '(a, b) -> Union (Concat a b) -> Either (Union a) (Union b)
+splitUAt _ (UnsafeInternalUnion n a)
     = let l = natV (proxy# @(Length a))
     in if n >= l
         then Left (UnsafeInternalUnion (n - l) a)
         else Right (UnsafeInternalUnion n a)
 
-splitUIso :: forall a b. Known (Length a) => Union (Concat a b) <-> Either (Union a) (Union b)
-splitUIso = splitU (Proxy @'(a, b)) :<-> from'
+splitUAtIso :: forall a b. Known (Length a) => Union (Concat a b) <-> Either (Union a) (Union b)
+splitUAtIso = splitUAt (Proxy @'(a, b)) :<-> from'
   where
     from' (Left u) = unsafeCoerce u -- left doesn't need offset
     from' (Right (UnsafeInternalUnion n a)) = UnsafeInternalUnion (n + natV (proxy# @(Length a))) a
@@ -172,7 +172,7 @@ instance (Eq (Union (a ': as)), Eq b) => Eq (Union (b ': a ': as)) where
 
 instance (Ord' t a) => Ord' t (Union '[a]) where
     a `compare'` b = decomposeLast a `compare'` decomposeLast b
-instance (Ord' u (Union (a ': as)), Ord' v b, t ~ Min u v) => Ord' t (Union (b ': a ': as)) where
+instance (Ord' u (Union (a ': as)), Ord' v b, t ~ MinTotallity u v) => Ord' t (Union (b ': a ': as)) where
     a `compare'` b = decompose a `compare'` decompose b
 
 

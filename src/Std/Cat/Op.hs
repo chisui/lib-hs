@@ -7,6 +7,7 @@ import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
+import "this" Std.Cat.Limit
 import "this" Std.Cat.Bifunctor
 
 
@@ -39,12 +40,19 @@ instance Cocartesian cat => Cartesian (Op cat) where
     type Product (Op cat) = Coproduct cat
     fst = Op lft
     snd = Op rght
-    copy = Op fuse
+    diagonal = Op codiagonal
     Op f &&& Op g = Op (f ||| g)
 
 instance Cartesian cat => Cocartesian (Op cat) where
     type Coproduct (Op cat) = Product cat
     lft = Op fst
     rght = Op snd
-    fuse = Op copy
+    codiagonal = Op diagonal
     Op f ||| Op g = Op (f &&& g)
+
+instance CatInitial cat => CatTerminal (Op cat) where
+    type Terminal (Op cat) = Initial cat
+    terminate = Op initiate
+instance CatTerminal cat => CatInitial (Op cat) where
+    type Initial (Op cat) = Terminal cat
+    initiate = Op terminate
