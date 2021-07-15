@@ -16,6 +16,15 @@ import "this" Std.Type
 import "this" Std.Cat.Class
 
 
+{- | A Functor is a mapping between categories. Objects are mapped using typeconstructor @f@,
+morphisms are mapped using @catMap@. Every functor has to preserve the structure of the
+underlying categories:
+
+[Identity]    @'catMap' 'id' == 'id'@
+[Composition] @'catMap' (f . g) == 'catMap' f . 'catMap' g@
+
+Functors that map a Category onto itself are Endofunctors.
+-}
 class (Category cat0, Category cat1) => CatFunctor' (c :: k0 -> Constraint) (cat0 :: k0 -> k0 -> Type) (cat1 :: k1 -> k1 -> Type) (f :: k0 -> k1) | f cat0 -> c where
     catMap, (<$$>) :: (c a, c b) => a `cat0` b -> f a `cat1` f b
     catMap = (<$$>)
