@@ -29,15 +29,15 @@ class (Category cat0, Category cat1) => CatFunctor' (c :: k0 -> Constraint) (cat
     catMap, (<$$>) :: (c a, c b) => a `cat0` b -> f a `cat1` f b
     catMap = (<$$>)
     (<$$>) = catMap
+    infixl 4 <$$>
     {-# MINIMAL catMap | (<$$>) #-}
-infixl 4 <$$>
-
+type CatFunctor         = CatFunctor' Unconstrained
 type EndoFunctor' c cat = CatFunctor' c cat cat
-type Functor' c = EndoFunctor' c HASK
+type EndoFunctor    cat = CatFunctor cat cat
+type Functor'     c     = EndoFunctor' c HASK
+type Functor            = EndoFunctor HASK
 
-type CatFunctor = CatFunctor' Unconstrained
-type EndoFunctor c = CatFunctor c c
-type Functor = EndoFunctor HASK
+
 
 mapEndo :: (EndoFunctor' c cat f, c a, c b) =>  a `cat` b -> f a `cat` f b
 mapEndo = catMap
@@ -71,5 +71,3 @@ deriving via (Basic1 (Base.Either a)) instance CatFunctor' Unconstrained HASK HA
 deriving via (Basic1 (Base.Const m))  instance CatFunctor' Unconstrained HASK HASK (Base.Const m)
 
 instance Category cat => CatFunctor' Unconstrained cat HASK Base.Proxy where catMap _ _ = Base.Proxy
-instance CatFunctor' Unconstrained (:~:) (:~:) f where catMap Refl = Refl
-instance CatFunctor' Unconstrained (:~:) HASK  f where catMap Refl = id

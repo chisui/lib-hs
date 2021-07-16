@@ -2,15 +2,16 @@ module Std.Cat.Limit where
 
 import "base" Data.Void
 
+import "this" Std.Type
 import "this" Std.Cat.Class
 
 
-class Category cat => CatTerminal cat where
-    type Terminal cat
+class Category cat => CatTerminal (cat :: k -> k -> Type) where
+    type Terminal cat :: k
     terminate :: a `cat` Terminal cat
 
-class Category cat => CatInitial cat where
-    type Initial cat
+class Category cat => CatInitial (cat :: k -> k -> Type) where
+    type Initial cat :: k
     initiate :: Initial cat `cat` a
 
 

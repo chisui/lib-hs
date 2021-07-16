@@ -20,13 +20,14 @@ fromCat = coerce
 
 instance (Bilift2 p, Semigroupoid l, Semigroupoid r) => Semigroupoid (ProdCat p l r) where
     (.) :: forall a b c. ProdCat p l r b c -> ProdCat p l r a b -> ProdCat p l r a c
-    (.) = coerce (bilift2 (.) (.) :: (Fst b `l` Fst c) `p` (Snd b `r` Snd c) -> (Fst a `l` Fst b) `p` (Snd a `r` Snd b) -> (Fst a `l` Fst c) `p` (Snd a `r` Snd c))
+    (.) = coerce ((.) `bilift2` (.) :: (Fst b `l` Fst c) `p` (Snd b `r` Snd c) -> (Fst a `l` Fst b) `p` (Snd a `r` Snd b) -> (Fst a `l` Fst c) `p` (Snd a `r` Snd c))
 
 instance (Bipure p, CatId l, CatId r) => CatId (ProdCat p l r) where
-    id = ProdCat (bipure id id)
+    id :: forall a. ProdCat p l r a a
+    id = coerce (id `bipure` id :: (Fst a `l` Fst a) `p` (Snd a `r` Snd a))
 
 instance (Biapplicative p, Category l, Category r) => Category (ProdCat p l r)
 
 instance (Biapplicative p, Groupoid l, Groupoid r) => Groupoid (ProdCat p l r) where
-    invCat :: forall a b. ProdCat p l r a b -> ProdCat p l r b a
-    invCat = coerce (bimap invCat invCat :: (Fst a `l` Fst b) `p` (Snd a `r` Snd b) -> (Fst b `l` Fst a) `p` (Snd b `r` Snd a))
+    catInv :: forall a b. ProdCat p l r a b -> ProdCat p l r b a
+    catInv = coerce (catInv *** catInv :: (Fst a `l` Fst b) `p` (Snd a `r` Snd b) -> (Fst b `l` Fst a) `p` (Snd b `r` Snd a))

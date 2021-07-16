@@ -17,6 +17,7 @@ import "this" Std.Cat.Limit
 import "this" Std.Cat.Commutative
 import "this" Std.Cat.Product
 import "this" Std.Cat.Op
+import "this" Std.Cat.Hom
 import "this" Std.Cat.ProductCat
 import "this" Std.Type
 
@@ -74,7 +75,7 @@ same = case eq @a @b of Refl -> id
 instance Category cat => Semigroupoid (Iso cat) where f . g = to f . to g :<-> from g . from f
 instance Category cat => CatId        (Iso cat) where id = id :<-> id
 instance Category cat => Category     (Iso cat)
-instance Category cat => Groupoid     (Iso cat) where invCat f = from f :<-> to f
+instance Category cat => Groupoid     (Iso cat) where catInv f = from f :<-> to f
 
 instance (CatTerminal cat, CatInitial cat, Terminal cat ~ Initial cat) => CatTerminal (Iso cat) where
     type Terminal (Iso cat) = Initial cat
@@ -83,13 +84,19 @@ instance (CatTerminal cat, CatInitial cat, Terminal cat ~ Initial cat) => CatIni
     type Initial (Iso cat) = Terminal cat
     initiate = initiate :<-> terminate
 
-instance      EndoFunctor' c    cat f => CatFunctor'      c    (Iso cat) (Iso cat) f where catMap = liftIso catMap catMap
-instance  EndoLeftFunctor' c c' cat f => CatLeftFunctor'  c c' (Iso cat) (Iso cat) f where left'  = liftIso left'   left'
+deriving via (Hom (Iso cat))   instance Category cat => CatLeftFunctor'  Unconstrained Unconstrained (Op (Iso cat)) HASK (Iso cat)
+deriving via (Hom (Iso cat))   instance Category cat => CatRightFunctor' Unconstrained Unconstrained (Iso cat) HASK (Iso cat)
+deriving via (Hom (Iso cat))   instance Category cat => CatBifunctor'    Unconstrained Unconstrained (Op (Iso cat)) (Iso cat) HASK (Iso cat)
+deriving via (Hom (Iso cat) a) instance Category cat => CatFunctor'      Unconstrained (Iso cat) HASK (Iso cat a)
+
+instance EndoLeftFunctor'  c c' cat f => CatLeftFunctor'  c c' (Iso cat) (Iso cat) f where left'  = liftIso left'   left'
 instance EndoRightFunctor' c c' cat f => CatRightFunctor' c c' (Iso cat) (Iso cat) f where right' = liftIso right'  right'
-instance    EndoBifunctor' c c' cat f => CatBifunctor'    c c' (Iso cat) (Iso cat) (Iso cat) f
+instance EndoBifunctor'    c c' cat f => CatBifunctor'    c c' (Iso cat) (Iso cat) (Iso cat) f
+instance EndoFunctor'      c    cat f => CatFunctor'      c    (Iso cat) (Iso cat) f where catMap = liftIso catMap catMap
+
 
 instance CatCommutative cat  f => CatCommutative (Iso cat) f         where commute = commute :<-> commute
-instance       Category cat    => CatCommutative HASK      (Iso cat) where commute = invCat
+instance       Category cat    => CatCommutative HASK      (Iso cat) where commute = catInv
 
 
 class CatIsomorphic cat a b where catIso :: Iso cat a b

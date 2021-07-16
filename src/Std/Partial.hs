@@ -18,6 +18,7 @@ module Std.Partial
     ) where
 
 import "base" Text.Show ( Show )
+import "base" Data.String ( String )
 import "base" Data.Eq ( Eq(..) )
 import "base" Data.Bool ( Bool(..) )
 import "base" Data.Maybe ( Maybe, maybe )
@@ -112,6 +113,7 @@ instance CatCombine' Unconstrained HASK (Res t) where
 instance CatAlternative' Unconstrained HASK (Res 'Partial)
 
 instance CatMonadFail' Unconstrained HASK (Res 'Partial) where
+    type FailMsg HASK (Res 'Partial) = String
     fail _ = empty
 
 instance CatIsomorphic HASK (Res 'Total a) (Identity a) where

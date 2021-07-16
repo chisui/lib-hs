@@ -13,14 +13,17 @@ import "this" Std.Cat.Bifunctor
 
 newtype Op cat a b = Op { unOp :: b `cat` a }
 
-liftOp :: (a `cat` b -> a' `cat` b') -> Op cat b a -> Op cat b' a'
+type family OpOf cat where
+    OpOf (Op (Op cat)) = OpOf cat
+    OpOf (Op cat) = cat
+    OpOf cat = Op cat
+
+liftOp :: (a `cat` b -> a' `cat'` b') -> Op cat b a -> Op cat' b' a'
 liftOp = coerce
 
-instance Semigroupoid cat => Semigroupoid (Op cat) where
-    Op g . Op f = Op (f . g)
-instance CatId cat => CatId (Op cat) where
-    id = Op id
-instance Category cat => Category (Op cat)
+instance Semigroupoid cat => Semigroupoid (Op cat) where Op g . Op f = Op (f . g)
+instance CatId        cat => CatId        (Op cat) where id = Op id
+instance Category     cat => Category     (Op cat)
 
 pam :: CatFunctor (Op c0) c1 f => b `c0` a -> f a `c1` f b
 pam = catMap . Op

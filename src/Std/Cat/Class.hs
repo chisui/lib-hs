@@ -10,14 +10,11 @@ module Std.Cat.Class
     , Category
     , Groupoid(..)
     , Basic2(..)
-    , type (:~:)(..)
     ) where
 
 import "base" Data.Coerce qualified as Base
 import "base" Control.Category qualified as Base
 import "base" Data.Functor.Const
-
-import "this" Std.Type
 
 
 -- | @HASK@ is the category of Haskell types and functions between them.
@@ -63,11 +60,11 @@ class (Semigroupoid cat, CatId cat) => Category cat
 -- | A groupoid is a category where every morphism is invertible.
 -- The inverse morphism has to adhere to the following:
 --
--- [Right identity] @f '.' invCat f  =  id@
--- [Left identity]  @invCat f '.' f  =  id@
+-- [Right identity] @f '.' catInv f  =  id@
+-- [Left identity]  @catInv f '.' f  =  id@
 --
 class Category cat => Groupoid cat where
-    invCat :: a `cat` b -> b `cat` a
+    catInv :: a `cat` b -> b `cat` a
 
 -- | A newtype to be used for deriving instances for data types with
 -- two type arguments. Example:
@@ -92,7 +89,3 @@ deriving via (Basic2 HASK) instance Category HASK
 
 instance Semigroupoid Const where _ . Const a = Const a
 instance Semigroupoid (,) where (_,c) . (a,_) = (a, c)
-
-instance Semigroupoid (:~:) where Refl . Refl = Refl
-instance CatId (:~:) where id = Refl
-instance Category (:~:)

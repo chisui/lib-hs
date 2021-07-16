@@ -29,3 +29,40 @@ instance ( EndoFunctor cat f
       where
         catMap' :: a `cat` b -> f a `p` g a -> f b `p` g b
         catMap' f = catBimap @cat @cat (catMap f) (catMap f)
+
+
+
+newtype Prod2 p f g a b = Prod2
+    { unProd2 :: f a b `p` g a b
+    }
+type Product2   = Prod2 (,)
+type Coproduct2 = Prod2 Either
+
+liftProd2 :: (f a b `p` g a b -> f' a' b' `p'` g' a' b') -> Prod2 p f g a b -> Prod2 p' f' g' a' b'
+liftProd2 f = Prod2 . f . unProd2
+
+
+instance ( EndoLeftFunctor cat f
+         , EndoLeftFunctor cat g
+         , CatBifunctor cat cat HASK p
+         ) => CatLeftFunctor' Unconstrained Unconstrained cat HASK (Prod2 p f g) where
+    left' :: forall a b c. a `cat` b -> Prod2 p f g a c -> Prod2 p f g b c
+    left' = coerce left''
+      where
+        left'' :: a `cat` b -> f a c `p` g a c -> f b c `p` g b c
+        left'' f = catBimap @cat @cat @HASK (left f) (left f)
+
+instance ( EndoRightFunctor cat f
+         , EndoRightFunctor cat g
+         , CatBifunctor cat cat HASK p
+         ) => CatRightFunctor' Unconstrained Unconstrained cat HASK (Prod2 p f g) where
+    right' :: forall a b c. a `cat` b -> Prod2 p f g c a -> Prod2 p f g c b
+    right' = coerce right''
+      where
+        right'' :: a `cat` b -> f c a `p` g c a -> f c b `p` g c b
+        right'' f = catBimap @cat @cat @HASK (right f) (right f)
+
+instance ( EndoBifunctor cat f
+         , EndoBifunctor cat g
+         , CatBifunctor cat cat HASK p
+         ) => CatBifunctor' Unconstrained Unconstrained cat cat HASK (Prod2 p f g)

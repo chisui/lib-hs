@@ -69,7 +69,7 @@ instance IdentityOp 'And Bool where
     identity# _ = True
 instance AssociativeOp 'And Bool
 instance Idempotent 'And Bool
-instance Commutative 'And Bool
+instance CommutativeOp 'And Bool
 instance BinOp 'Nand Bool where
     op# _ True True = False
     op# _ _    _    = True
@@ -83,7 +83,7 @@ instance BinOp 'Or Bool where
     op# _ = (Base.||)
 instance AssociativeOp 'Or Bool
 instance Idempotent 'Or Bool
-instance Commutative 'Or Bool
+instance CommutativeOp 'Or Bool
 instance IdentityOp 'Or Bool where
     identity# _ = False
 instance BinOp 'Nor Bool where
@@ -102,7 +102,7 @@ instance DistributiveOp 'And 'Or Bool
 instance BinOp 'Xor Bool where
     op# _ = Base.xor
 instance AssociativeOp 'Xor Bool
-instance Commutative 'Xor Bool
+instance CommutativeOp 'Xor Bool
 
 instance BinOp 'Impl Bool where
     op# _ True  True = True
@@ -113,4 +113,4 @@ deriving via (Monoidal Ordering) instance BinOp       'Canonic Ordering
 deriving via (Monoidal Ordering) instance IdentityOp  'Canonic Ordering
 instance AssociativeOp 'Canonic Ordering
 instance Idempotent    'Canonic Ordering
-instance Commutative   'Canonic Ordering
+instance CommutativeOp   'Canonic Ordering

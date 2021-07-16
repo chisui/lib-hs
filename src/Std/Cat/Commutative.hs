@@ -13,6 +13,10 @@ import "this" Std.Cat.NaturalTransformation
 
 class Category cat => CatCommutative (cat :: k1 -> k1 -> Type) (f :: k0 -> k0 -> k1) where
     commute :: (a `f` b) `cat` (b `f` a)
+type Commutative = CatCommutative HASK
+
+swap :: CatCommutative cat f => (a `f` b) `cat` (b `f` a)
+swap = commute
 
 
 commuteProd :: Cartesian cat => Product cat a b `cat` Product cat b a

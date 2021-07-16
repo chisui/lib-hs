@@ -51,8 +51,8 @@ instance ( CatMonad cat m
          , EndoBifunctor (CatKleisli cat m) (Product cat)
          ) => Cartesian (CatKleisli cat m) where
     type Product (CatKleisli cat m) = Product cat
-    fst  = arr @cat fst
-    snd  = arr @cat snd
+    fst      = arr @cat fst
+    snd      = arr @cat snd
     diagonal = arr @cat diagonal
 
 instance ( CatMonad cat m
@@ -60,8 +60,8 @@ instance ( CatMonad cat m
          , EndoBifunctor (CatKleisli cat m) (Coproduct cat)
          ) => Cocartesian (CatKleisli cat m) where
     type Coproduct (CatKleisli cat m) = Coproduct cat
-    lft  = arr @cat lft
-    rght = arr @cat rght
+    lft        = arr @cat lft
+    rght       = arr @cat rght
     codiagonal = arr @cat codiagonal
 
 instance Distributive m => Closed (Kleisli m) where

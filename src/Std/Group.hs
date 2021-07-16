@@ -5,7 +5,7 @@ module Std.Group
     , Magma
     , AssociativeOp
     , Quasigroup
-    , Commutative
+    , CommutativeOp
     , Idempotent
     , Upper(..)
     , Lower(..)
@@ -46,7 +46,7 @@ class    TotalInverseOp op a => Quasigroup op a
 instance TotalInverseOp op a => Quasigroup op a
 
 
-class Magma op a => Commutative (op :: k) a
+class Magma op a => CommutativeOp (op :: k) a
 
 class Magma op a => Idempotent (op :: k) a
 
@@ -91,11 +91,11 @@ instance (Semigroup 'Canonic a, IdentityOp 'Canonic a) => CanonicMonoid a
 class    (IdentityOp op a, AssociativeOp op a, Quasigroup op a) => Group op a
 instance (IdentityOp op a, AssociativeOp op a, Quasigroup op a) => Group op a
 
-class    (Group op a, Commutative op a) => Abelian op a
-instance (Group op a, Commutative op a) => Abelian op a
+class    (Group op a, CommutativeOp op a) => Abelian op a
+instance (Group op a, CommutativeOp op a) => Abelian op a
 
-class    (AssociativeOp op a, Commutative op a, Idempotent op a) => Semilattice op a
-instance (AssociativeOp op a, Commutative op a, Idempotent op a) => Semilattice op a
+class    (AssociativeOp op a, CommutativeOp op a, Idempotent op a) => Semilattice op a
+instance (AssociativeOp op a, CommutativeOp op a, Idempotent op a) => Semilattice op a
 
 class    (Magma f a, Magma g a) => DistributiveOp f g a
 
@@ -103,8 +103,8 @@ class    (Magma f a, Magma g a) => DistributiveOp f g a
 class    (Abelian f a, Monoid g a, DistributiveOp f g a, DistributiveOp g f a) => Ring f g a
 instance (Abelian f a, Monoid g a, DistributiveOp f g a, DistributiveOp g f a) => Ring f g a
 
-class    (Ring f g a, Commutative g a) => CommutativeRing f g a
-instance (Ring f g a, Commutative g a) => CommutativeRing f g a
+class    (Ring f g a, CommutativeOp g a) => CommutativeRing f g a
+instance (Ring f g a, CommutativeOp g a) => CommutativeRing f g a
 
 class    (CommutativeRing f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field f g a
 instance (CommutativeRing f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field f g a
@@ -112,13 +112,13 @@ instance (CommutativeRing f g a, Abelian g a, Quasigroup f a, Quasigroup f a) =>
 -- instances
 
 instance AssociativeOp  'Add Base.Int
-instance Commutative    'Add Base.Int
+instance CommutativeOp    'Add Base.Int
 instance AssociativeOp  'Mult Base.Int
 instance DistributiveOp 'Mult 'Add Base.Int
 instance DistributiveOp 'Add 'Mult Base.Int
 
 instance AssociativeOp  'Add Base.Integer
-instance Commutative    'Add Base.Integer
+instance CommutativeOp    'Add Base.Integer
 instance AssociativeOp  'Mult Base.Integer
 instance DistributiveOp 'Mult 'Add Base.Integer
 instance DistributiveOp 'Add 'Mult Base.Integer

@@ -8,6 +8,7 @@ import "this" Std.Ord
 import "this" Std.Type
 import "this" Std.Cat
 
+
 -- | A Category that contains every Object in k and unique morphisms between every pair of objects
 data Phantom k (a :: k) (b :: k) = Phantom
   deriving (Eq, Base.Ord)
@@ -16,6 +17,7 @@ data Phantom k (a :: k) (b :: k) = Phantom
 type Trivial = Phantom ()
 -- | The empty Category
 type Empty = Phantom Void
+
 
 instance CatIsomorphic (Phantom k) a b where
     catIso = Phantom :<-> Phantom
@@ -26,7 +28,7 @@ instance CatIsomorphic HASK () (Phantom k a b) where
 instance Semigroupoid (Phantom k) where _ . _ = Phantom
 instance CatId        (Phantom k) where id = Phantom
 instance Category     (Phantom k)
-instance Groupoid     (Phantom k) where invCat _ = Phantom
+instance Groupoid     (Phantom k) where catInv _ = Phantom
 
 instance CatFunctor' Unconstrained (Phantom k) (Phantom k) f where catMap _ = Phantom
 
@@ -80,8 +82,10 @@ instance CatComonad'     Unconstrained (Phantom Type) f
 
 instance Category c0 => CatLeftFunctor'  Unconstrained Unconstrained c0 (Phantom k) f where left'  _ = Phantom
 instance Category c0 => CatRightFunctor' Unconstrained Unconstrained c0 (Phantom k) f where right' _ = Phantom
-instance (Category c0, Category c1) => CatBifunctor' Unconstrained Unconstrained c0 c1 (Phantom k) f where
+instance (Category c0, Category c1) => CatBifunctor' Unconstrained Unconstrained c0 c1 (Phantom k) f
 
 instance Category c0 => CatLeftFunctor'  Unconstrained Unconstrained c0 HASK (Phantom k) where left'  _ _ = Phantom
 instance Category c0 => CatRightFunctor' Unconstrained Unconstrained c0 HASK (Phantom k) where right' _ _ = Phantom
-instance (Category c0, Category c1) => CatBifunctor' Unconstrained Unconstrained c0 c1 HASK (Phantom k) where
+instance (Category c0, Category c1) => CatBifunctor' Unconstrained Unconstrained c0 c1 HASK (Phantom k)
+
+deriving via (Hom (Phantom k) a) instance CatFunctor' Unconstrained (Phantom k) HASK (Phantom k a)

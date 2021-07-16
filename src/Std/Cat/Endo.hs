@@ -37,12 +37,12 @@ instance Semigroupoid cat => AssociativeOp 'Canonic (EndoMorph cat a)
 instance Groupoid cat => BinOp 'InvCanonic (EndoMorph cat a) where
     op# _ = to coerce (op' :: a `cat` a -> a `cat` a -> a `cat` a)
       where
-        op' a b = a . invCat b
+        op' a b = a . catInv b
 
 instance Groupoid cat => InverseOp 'Canonic (EndoMorph cat a) where
     type InvOp 'Canonic (EndoMorph cat a) = 'InvCanonic
-    inv# _ = to coerce (invCat :: a `cat` a -> a `cat` a)
+    inv# _ = to coerce (catInv :: a `cat` a -> a `cat` a)
 
 instance Groupoid cat => InverseOp 'InvCanonic (EndoMorph cat a) where
     type InvOp 'InvCanonic (EndoMorph cat a) = 'Canonic
-    inv# _ = to coerce (invCat :: a `cat` a -> a `cat` a)
+    inv# _ = to coerce (catInv :: a `cat` a -> a `cat` a)
