@@ -4,6 +4,9 @@
 {-# LANGUAGE MagicHash #-}
 module Std.Matrix where
 
+import "base" Prelude ( Int )
+import "base" Data.List qualified as List
+
 import "this" Std.Ord
 import "this" Std.BinOp
 import "this" Std.Type
@@ -17,38 +20,34 @@ import "this" Std.Cat.Traversable
 import "this" Std.Singleton
 
 
-data Matrix a m n where
-    MkScale  :: a -> Matrix a m n
-    MkMatrix :: (Known m, Known n) => Vec m (Vec n a) -> Matrix a m n
+newtype Matrix a m n = Matrix
+    { getRowsM :: (Vec m . Vec n) a
+    }
+type Square a = EndoMorph (Matrix a)
 
-pattern Matrix :: (Known m, Known n, Field a) => Vec m (Vec n a) -> Matrix a m n
-pattern Matrix m <- (toRows -> m)
-  where Matrix m = MkMatrix m
-{-# COMPLETE Matrix #-}
-
-toRows :: forall m n a. (Known m, Known n, Field a) => Matrix a m n -> Vec m (Vec n a)
-toRows (MkMatrix m) = m
-toRows (MkScale  a) = fromList . map fromList . mkRows $ 0
+mkScale :: forall m n a. (Known m, Known n) => a -> a -> Matrix a m n
+mkScale z a = Matrix . Compose . fromList . map fromList . mkRows $ 0
   where
     mkRows i
         | i == (val' @m) = []
         | otherwise      = mkRow i 0 : mkRows (i + 1)
     mkRow i j
         | j == (val' @n) = []
-        | j == i         = a    : mkRow i (j + 1)
-        | otherwise      = zero : mkRow i (j + 1)
+        | j == i         = a : mkRow i (j + 1)
+        | otherwise      = z : mkRow i (j + 1)
 
+mkDiagonal :: forall m n a. (Known m, Known n) => a -> Vec (MinT m n) a -> Matrix a m n
+mkDiagonal z d = Matrix . Compose $ (\i -> mkCell i <$> iteratedV) <$> iteratedV
+  where
+    mkCell :: Int -> Int -> a
+    mkCell i j
+        | i == j = toList d List.!! i
+        | otherwise = z
 
-type Square a = EndoMorph (Matrix a)
-
-instance FromInteger a => FromInteger (Matrix a m m) where fromInteger = MkScale . fromInteger
+instance (FromInteger a, Field a, Known m) => FromInteger (Matrix a m m) where fromInteger = mkScale zero . fromInteger
 
 instance Known n => CatIsomorphic HASK (Vec n a) (Matrix a 1 n) where
-    catIso = MkMatrix . pure :<-> f
-      where
-        f :: Matrix a 1 n -> Vec n a
-        f (MkMatrix (VCons v _)) = v
-        f (MkScale a)            = pure a
+    catIso = Matrix . Compose . pure :<-> (\(Matrix (Compose (VCons v _))) -> v)
 
 instance Known n => CatIsomorphic HASK (Vec n a) (Matrix a n 1) where
     catIso = isoThrough @(Matrix a 1 n)
@@ -57,38 +56,42 @@ instance (Known m, Known n) => CatIsomorphic HASK (Matrix a m n) (Matrix a n m) 
     catIso = transposeM :<-> transposeM
 
 
-transposeM :: Matrix a m n -> Matrix a n m
-transposeM (MkScale a)  = MkScale a
-transposeM (MkMatrix v) = MkMatrix (sequence v)
+transposeM :: forall a m n. (Known m, Known n) => Matrix a m n -> Matrix a n m
+transposeM = to coerce (sequence :: Vec m (Vec n a) -> Vec n (Vec m a))
 
-scaleM :: Magma 'Mult a => a -> Matrix a m n -> Matrix a m n
-scaleM a (MkScale b) = MkScale (a * b)
-scaleM a (MkMatrix m) = MkMatrix (map (* a) <$> m)
+scaleM :: forall a m n. Magma 'Mult a => a -> Matrix a m n -> Matrix a m n
+scaleM a = to coerce (map (* a) :: (Vec m . Vec n) a -> (Vec m . Vec n) a)
 
-instance Magma 'Add a => BinOp 'Add (Matrix a m n) where
-    op# p (MkScale  a) (MkScale  b) = MkScale (op# p a b)
-    op# p (MkMatrix m) (MkScale  a) = MkMatrix (map (flip (op# p) a) <$> m)
-    op# p (MkScale  a) (MkMatrix m) = MkMatrix (map (op# p a) <$> m)
-    op# p (MkMatrix m) (MkMatrix n) = MkMatrix (lift2 (lift2 (op# p)) m n)
+instance (Field a, Known m, Known n) => BinOp 'Add (Matrix a m n) where
+    op# p m n = getME $ lift2 (op# p) (ME m) (ME n)
 
-instance UnitalMagma 'Add a => IdentityOp 'Add (Matrix a m m) where
-    identity# p = MkScale (identity# p)
+instance (Field a, Known m, Known n) => IdentityOp 'Add (Matrix a m n) where
+    identity# p = mkScale zero (identity# p)
 
 instance Field a => Semigroupoid' Known (Matrix a) where
-    Matrix a . Matrix b = Matrix ((<$> sequence a) . dot <$> b)
+    (.) :: forall m n l. (Known m, Known n, Known l) => Matrix a m l -> Matrix a n m -> Matrix a n l
+    (.) = to coerce ((\ a b -> (<$> sequence a) . dot <$> b) :: Vec m (Vec l a) -> Vec n (Vec m a) -> Vec n (Vec l a))
 
 instance Field a => CatId' Known (Matrix a) where
-    id = MkScale one
+    id = mkScale zero one
 
 instance Field a => Category' Known (Matrix a)
 
 
-newtype MatrixElems m n a = ME (Matrix a m n)
+newtype MatrixElems m n a = ME
+    { getME :: Matrix a m n
+    }
 
 instance CatFunctor' Unconstrained HASK HASK (MatrixElems m n) where
-    catMap f (ME (MkScale  a)) = ME (MkScale (f a))
-    catMap f (ME (MkMatrix m)) = ME (MkMatrix (map f <$> m))
+    catMap :: forall a b. (a -> b) -> MatrixElems m n a -> MatrixElems m n b
+    catMap = to coerce (map :: (a -> b) -> (Vec m . Vec n) a -> (Vec m . Vec n) b)
 
 instance (Known n, Known m) => CatPure' Unconstrained HASK (MatrixElems m n) where
-    catPure = ME . MkScale
-    
+    catPure = ME . Matrix . pure
+
+instance (Known n, Known m) => CatAp' Unconstrained HASK (MatrixElems m n) where
+    (<**>) = lift2 id
+
+instance (Known n, Known m) => CatLift2' Unconstrained HASK (MatrixElems m n) where
+    lift2 :: forall a b c. (a -> b -> c) -> MatrixElems m n a -> MatrixElems m n b -> MatrixElems m n c
+    lift2 f = to coerce (lift2 (lift2 f) :: Vec m (Vec n a) -> Vec m (Vec n b) -> Vec m (Vec n c))

@@ -106,8 +106,8 @@ recip = inv# (proxy# @'Mult)
 mempty :: IdentityOp 'Canonic a => a
 mempty = identity# (proxy# @'Canonic)
 
-class    (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a, FromInt 'Total a) => Iterable a
-instance (Eq a, Ord a, IdentityOp 'Add a, Pred 'Total a, Succ 'Total a, FromInt 'Total a) => Iterable a
+class    (Eq a, Ord a, IdentityOp 'Add a, TotalBinOp 'Add a, Pred 'Total a, Succ 'Total a, FromInt 'Total a) => Iterable a
+instance (Eq a, Ord a, IdentityOp 'Add a, TotalBinOp 'Add a, Pred 'Total a, Succ 'Total a, FromInt 'Total a) => Iterable a
 
 replicate :: (Alternative f, Iterable i) => i -> a -> f a
 replicate i a = if (i == zero)
@@ -225,12 +225,15 @@ instance (FromInteger a, Base.Integral a) => InverseOp 'Mult (Integrally a) wher
     type InvOp 'Mult (Integrally a) = 'Div
     inv# _ _ = EmptyRes
 
-deriving via (Numeric    Base.Int) instance BinOp 'Add  Base.Int
-deriving via (Numeric    Base.Int) instance BinOp 'Sub  Base.Int
-deriving via (Numeric    Base.Int) instance BinOp 'Mult Base.Int
-deriving via (Integrally Base.Int) instance BinOp 'Div  Base.Int
-deriving via (Numeric    Base.Int) instance InverseOp 'Add  Base.Int
-deriving via (Numeric    Base.Int) instance InverseOp 'Sub  Base.Int
+deriving via (Numeric    Base.Int) instance BinOp      'Add  Base.Int
+deriving via (Numeric    Base.Int) instance IdentityOp 'Add  Base.Int
+deriving via (Numeric    Base.Int) instance InverseOp  'Add  Base.Int
+deriving via (Numeric    Base.Int) instance BinOp      'Sub  Base.Int
+deriving via (Numeric    Base.Int) instance IdentityOp 'Sub  Base.Int
+deriving via (Numeric    Base.Int) instance InverseOp  'Sub  Base.Int
+deriving via (Numeric    Base.Int) instance BinOp      'Mult Base.Int
+deriving via (Numeric    Base.Int) instance IdentityOp 'Mult  Base.Int
+deriving via (Integrally Base.Int) instance BinOp      'Div  Base.Int
 
 instance BinOp 'Add  Base.Integer where op# _ = (Base.+)
 instance BinOp 'Sub  Base.Integer where op# _ = (Base.-)

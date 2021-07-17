@@ -16,15 +16,16 @@ module Std.Type
     , type (===)
     , Concat
     , Length
+    , MinT, MaxT
     ) where
 
-import "base" Prelude ( Bool(..) )
+import "base" Prelude ( Bool(..), Ordering(..) )
 import "base" Data.Type.Equality as Exp (type (:~:) (..))
 import "base" Data.Typeable as Exp (Typeable)
 import "base" Data.Type.Bool ( type (&&) )
 import "base" Data.Kind as Exp ( Type, Constraint )
 import "base" GHC.Exts as Exp ( Any )
-import "base" GHC.TypeLits as Exp ( Symbol, KnownSymbol, Nat, KnownNat, type (+), type(-) )
+import "base" GHC.TypeLits as Exp ( Symbol, KnownSymbol, Nat, KnownNat, CmpNat, CmpSymbol, type (+), type(-) )
 
 import "ghc-prim" GHC.Prim as Exp ( proxy#, Proxy# )
 
@@ -91,3 +92,18 @@ instance (a ~ b) => (==) a b where eq = Refl
 type family Concat a b where
     Concat '[] l = l
     Concat (a ': as) l = a ': Concat as l
+
+class OrdKind k where
+    type Compare (a :: k) (b :: k) :: Ordering
+instance OrdKind Nat where
+    type Compare a b = CmpNat a b
+instance OrdKind Symbol where
+    type Compare a b = CmpSymbol a b
+
+type MinT (a :: k) (b :: k) = MinFromOrdering (Compare a b) a b
+
+type MaxT (a :: k) (b :: k) = MinFromOrdering (Compare a b) b a
+
+type family MinFromOrdering (o :: Ordering) (a :: k) (b :: k) :: k where
+    MinFromOrdering 'GT _ b = b
+    MinFromOrdering _   a _ = a

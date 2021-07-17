@@ -82,7 +82,21 @@ instance Foldable' Unconstrained (Vec n) where
 instance Known n => Traversable (Vec n) where
     sequence = map fromList . sequence . toList
 
-dot :: (Known n, Field a) => Vec n a -> Vec n a -> a
+unfoldV :: forall n a b. Known n => (a -> (a, b)) -> a -> Vec n b
+unfoldV f = v (val' @n)
+  where
+    v :: Integer -> a -> Vec m b
+    v 0 _ = unsafeCoerce VNil
+    v n a = let (a', b) = f a
+        in unsafeCoerce (VCons b (v (n - 1) a'))
+
+iterateV :: forall n a. Known n => (a -> a) -> a -> Vec n a
+iterateV f = unfoldV (diagonal . f)
+
+iteratedV :: forall i n. (Known n, Iterable i) => Vec n i
+iteratedV = iterateV succ zero
+
+dot :: forall a n. (Known n, Field a) => Vec n a -> Vec n a -> a
 dot a b = sum (a * b)
 
 instance (Known n, Magma       op a) => BinOp         op (Vec n a) where op# p = lift2 (op# p)

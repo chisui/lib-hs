@@ -9,7 +9,7 @@ module Std.Literal
     , HasItems(..), FromList(..), ToList(..), IsList
     , toEnum, fromEnum
     , MinBound(..), MaxBound(..), Bounded
-    , Pred'(..), Succ'(..), Pred, Succ
+    , Pred(..), Succ(..)
     ) where
 
 import "base" Prelude ( (==) )
@@ -19,7 +19,6 @@ import "base" Data.List.NonEmpty qualified as Base ( NonEmpty(..) )
 import "base" GHC.Exts qualified as Base
 import "base" GHC.Float.RealFracMethods qualified as Base
 import "base" Prelude ( Int, Integer, String )
-import "base" Data.Kind
 import "base" GHC.TypeLits
 
 import "this" Std.Partial
@@ -75,21 +74,11 @@ class MaxBound a where
 class    (MinBound a, MaxBound a) => Bounded a
 instance (MinBound a, MaxBound a) => Bounded a
 
-class MapDirectRes t => Pred' t a | a -> t where
-    type PredRes a :: Type
-    type PredRes a = a
-    pred :: a -> DirectRes t (PredRes a)
+class MapDirectRes t => Pred t a | a -> t where
+    pred :: a -> DirectRes t a
 
-class    (MapDirectRes t, Pred' t a, a ~ PredRes a) => Pred t a | a -> t
-instance (MapDirectRes t, Pred' t a, a ~ PredRes a) => Pred t a
-
-class MapDirectRes t => Succ' t a | a -> t where
-    type SuccRes a :: Type
-    type SuccRes a = a
+class MapDirectRes t => Succ t a | a -> t where
     succ :: a -> DirectRes t a
-
-class    (MapDirectRes t, Succ' t a, a ~ SuccRes a) => Succ t a | a -> t
-instance (MapDirectRes t, Succ' t a, a ~ SuccRes a) => Succ t a
 
 -- instances 
 
@@ -107,9 +96,9 @@ instance Base.Enum a => FromInt 'Total (Basic a) where
     fromInt = to coerce (Base.toEnum :: Int -> a)
 instance Base.Enum a => ToInt 'Total (Basic a) where
     toInt = to coerce (Base.fromEnum :: a -> Int)
-instance Base.Enum a => Pred' 'Total (Basic a) where
+instance Base.Enum a => Pred 'Total (Basic a) where
     pred = to coerce (Base.pred :: a -> a)
-instance Base.Enum a => Succ' 'Total (Basic a) where
+instance Base.Enum a => Succ 'Total (Basic a) where
     succ = to coerce (Base.succ :: a -> a)
 
 instance Base.Bounded a => MinBound (Basic a) where
@@ -125,9 +114,9 @@ instance Base.Enum a => FromInt 'Partial (Unsafe a) where
     fromInt = errorToPartial1 @(Base.Int -> a) Base.toEnum
 instance Base.Enum a => ToInt 'Partial (Unsafe a) where
     toInt = errorToPartial1 @(a -> Base.Int) Base.fromEnum
-instance Base.Enum a => Pred' 'Partial (Unsafe a) where
+instance Base.Enum a => Pred 'Partial (Unsafe a) where
     pred = errorToPartial1 @(a -> a) Base.pred
-instance Base.Enum a => Succ' 'Partial (Unsafe a) where
+instance Base.Enum a => Succ 'Partial (Unsafe a) where
     succ = errorToPartial1 @(a -> a) Base.succ
 
 instance Base.IsList l => HasItems (Basic l) where
@@ -162,30 +151,30 @@ deriving via (Basic  Base.Integer) instance FromInteger Base.Integer
 deriving via (Basic  Base.Integer) instance FromInt     'Total   Base.Integer
 deriving via (Unsafe Base.Integer) instance ToInt       'Partial Base.Integer
 deriving via (Basic  Base.Integer) instance ToInteger   'Total   Base.Integer
-deriving via (Basic  Base.Integer) instance Pred'        'Total   Base.Integer
-deriving via (Basic  Base.Integer) instance Succ'        'Total   Base.Integer
+deriving via (Basic  Base.Integer) instance Pred        'Total   Base.Integer
+deriving via (Basic  Base.Integer) instance Succ        'Total   Base.Integer
 
 
 deriving via (Basic Base.Int) instance FromInteger  Base.Int
 deriving via (Basic Base.Int) instance FromInt     'Total   Base.Int
 deriving via (Basic Base.Int) instance ToInt       'Total   Base.Int
 deriving via (Basic Base.Int) instance ToInteger   'Total   Base.Int
-deriving via (Basic Base.Int) instance Pred'        'Total   Base.Int
-deriving via (Basic Base.Int) instance Succ'        'Total   Base.Int
+deriving via (Basic Base.Int) instance Pred        'Total   Base.Int
+deriving via (Basic Base.Int) instance Succ        'Total   Base.Int
 
 
 deriving via (Basic Base.Word) instance FromInteger  Base.Word
 deriving via (Basic Base.Word) instance FromInt     'Total   Base.Word
 deriving via (Basic Base.Word) instance ToInt       'Total   Base.Word
 deriving via (Basic Base.Word) instance ToInteger   'Total   Base.Word
-deriving via (Basic Base.Word) instance Pred'        'Total   Base.Word
-deriving via (Basic Base.Word) instance Succ'        'Total   Base.Word
+deriving via (Basic Base.Word) instance Pred        'Total   Base.Word
+deriving via (Basic Base.Word) instance Succ        'Total   Base.Word
 
 
 deriving via (Basic  Base.Double) instance FromInteger  Base.Double
 deriving via (Basic  Base.Double) instance FromInt     'Total   Base.Double
-deriving via (Basic  Base.Double) instance Pred'        'Total   Base.Double
-deriving via (Basic  Base.Double) instance Succ'        'Total   Base.Double
+deriving via (Basic  Base.Double) instance Pred        'Total   Base.Double
+deriving via (Basic  Base.Double) instance Succ        'Total   Base.Double
 instance ToInt     'Partial Base.Double where toInt     = properFracPartial . Base.properFractionDoubleInt
 instance ToInteger 'Partial Base.Double where toInteger = properFracPartial . Base.properFractionDoubleInteger
 
@@ -193,9 +182,7 @@ properFracPartial :: (Base.Eq r, FromInteger r) => (a, r) -> Res 'Partial a
 properFracPartial (a, 0) = FullRes a
 properFracPartial _      = EmptyRes
 
-instance Succ' 'Total (Proxy (n :: Nat)) where
-    type SuccRes (Proxy n) = (Proxy (n + 1))
+instance Succ 'Total (Proxy (n :: Nat)) where
     succ _ = Proxy
-instance Pred' 'Total (Proxy (n :: Nat)) where
-    type PredRes (Proxy n) = (Proxy (n - 1))
+instance Pred 'Total (Proxy (n :: Nat)) where
     pred _ = Proxy
