@@ -21,8 +21,8 @@ type CatExtract = CatExtract' Unconstrained
 type Extract' c = CatExtract' c HASK
 type Extract    = CatExtract HASK
 
-class CatExtend' c cat m | m -> c where
-    (<<=) :: (c a, c b) => m a `cat` b -> m a `cat` m b
+class Closed cat => CatExtend' c cat m | m -> c where
+    (<<=) :: (c a, c b) => Exp cat (m a) b `cat` Exp cat (m a) (m b)
 type CatExtend = CatExtend' Unconstrained
 type Extend' c = CatExtend' c HASK
 type Extend    = CatExtend HASK
@@ -47,9 +47,9 @@ type CatComonadApply = CatComonadApply' Unconstrained
 type ComonadApply' c = CatComonadApply' c HASK
 type ComonadApply    = CatComonadApply HASK
 
-class Closed cat => CatUnlift2' c cat f | f -> c where
+class Closed cat => CatUnlift2' (c :: k -> Constraint) (cat :: k -> k -> Type) (f :: k -> k) | f -> c where
     unlift2 :: (c a, c b, c r)
-            => f ((Exp cat a r) `cat` Exp cat (Exp cat b r) r)
+            => f (Exp cat (Exp cat a r) (Exp cat (Exp cat b r) r))
             `cat` Exp cat (Exp cat (f a) r) (Exp cat (Exp cat (f b) r) r)
 type CatUnlift2 = CatUnlift2' Unconstrained
 type Unlift2' c = CatUnlift2' c HASK
@@ -62,8 +62,6 @@ type Coapplicative    = CatCoapplicative HASK
 
 instance CatPure'  c cat f => CatExtract'   c (Op cat) f where extract = Op catPure
 instance CatJoin'  c cat f => CatDuplicate' c (Op cat) f where duplicate = Op join
-instance CatBind'  c cat f => CatExtend'    c (Op cat) f where (<<=) (Op f) = Op ((=<<) f)
-instance CatMonad' c cat f => CatComonad'   c (Op cat) f
 
 instance CatExtract'       Unconstrained HASK Identity where extract   = coerce
 instance CatExtend'        Unconstrained HASK Identity where (<<=)     = coerce

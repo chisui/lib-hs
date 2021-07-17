@@ -1,7 +1,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms #-}
-module Std.Cat.Iso where
+module Std.Cat.Iso
+    ( Iso(..), type(<->), type (≅), type (<~>), pattern (:<->), to, from, liftIso
+    , product, coproduct, product1, coproduct1, same, coerce, Base.Coercible
+    , CatIsomorphic(..), Isomorphic, iso, type (<-->), type (<~~>)
+    , etaIso, isoThrough
+    ) where
 
 import "base" Data.Either qualified as Base
 import "base" Data.Coerce qualified as Base
@@ -22,21 +27,27 @@ import "this" Std.Cat.ProductCat
 import "this" Std.Type
 
 
-newtype Iso cat a b = Iso (ProdCat (,) cat (Op cat) '(a, a) '(b, b))
-pattern (:<->) :: Category cat => a `cat` b -> b `cat` a -> Iso cat a b
+newtype Iso cat a b = Iso ((cat × (Op cat)) '(a, a) '(b, b))
+pattern (:<->) :: (Category' c cat, c a, c b) => a `cat` b -> b `cat` a -> Iso cat a b
 pattern t :<-> f = Iso (ProdCat (t, Op f))
 infix 1 :<->
 {-# COMPLETE (:<->) #-}
 
-to :: Category cat => Iso cat a b -> a `cat` b
+to :: (Category' c cat, c a, c b) => Iso cat a b -> a `cat` b
 to (t :<-> _) = t
-from :: Category cat => Iso cat a b -> b `cat` a
+from :: (Category' c cat, c a, c b) => Iso cat a b -> b `cat` a
 from (_ :<-> f) = f
 
 type (<->) = Iso HASK
 infixr 1 <->
 type (<~>) = Iso (~>)
 infixr 0 <~>
+
+infixr 1 ≅
+type (≅) (l :: k) (r :: k) = IsoFor k l r
+class    ChooseIso k           where type IsoFor k :: k -> k -> Type
+instance ChooseIso Type        where type IsoFor Type        = (<->)
+instance ChooseIso (k -> Type) where type IsoFor (k -> Type) = (<~>)
 
 
 liftIso :: (Category cat, Category cat')
@@ -72,10 +83,10 @@ coproduct1 = coerce
 same :: forall a b. a == b => a <-> b
 same = case eq @a @b of Refl -> id
 
-instance Category cat => Semigroupoid (Iso cat) where f . g = to f . to g :<-> from g . from f
-instance Category cat => CatId        (Iso cat) where id = id :<-> id
-instance Category cat => Category     (Iso cat)
-instance Category cat => Groupoid     (Iso cat) where catInv f = from f :<-> to f
+instance Category' c cat => Semigroupoid' c (Iso cat) where f . g = to f . to g :<-> from g . from f
+instance Category' c cat => CatId'        c (Iso cat) where id = id :<-> id
+instance Category' c cat => Category'     c (Iso cat)
+instance Category' c cat => Groupoid'     c (Iso cat) where catInv f = from f :<-> to f
 
 instance (CatTerminal cat, CatInitial cat, Terminal cat ~ Initial cat) => CatTerminal (Iso cat) where
     type Terminal (Iso cat) = Initial cat

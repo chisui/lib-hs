@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 module Std.Cat.Functor
     ( CatFunctor'(..), EndoFunctor', Functor'
     , CatFunctor, EndoFunctor, Functor
@@ -38,7 +39,6 @@ type Functor'     c     = EndoFunctor' c HASK
 type Functor            = EndoFunctor HASK
 
 
-
 mapEndo :: (EndoFunctor' c cat f, c a, c b) =>  a `cat` b -> f a `cat` f b
 mapEndo = catMap
 
@@ -56,6 +56,10 @@ newtype Basic1 f a = Basic1
 instance Base.Functor f => CatFunctor' Unconstrained HASK HASK (Basic1 f) where
     catMap :: forall a b. (a -> b) -> Basic1 f a -> Basic1 f b
     catMap = coerce (Base.fmap :: (a -> b) -> f a -> f b)
+
+instance Functor f => Base.Functor (Basic1 f) where
+    fmap :: forall a b. (a -> b) -> Basic1 f a -> Basic1 f b
+    fmap = coerce (catMap :: (a -> b) -> f a -> f b)
 
 deriving via (Basic1 ((->) r))      instance CatFunctor' Unconstrained HASK HASK ((->) r)
 deriving via (Basic1 [])            instance CatFunctor' Unconstrained HASK HASK []

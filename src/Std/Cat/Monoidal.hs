@@ -1,6 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 module Std.Cat.Monoidal
     ( CatMonoidal(..)
+    , CatMonoidalClosed(..)
     ) where
 
 import "base" Data.Kind
@@ -13,19 +14,27 @@ import "this" Std.Cat.Iso
 import "this" Std.Cat.Bifunctor
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
+import "this" Std.Cat.Closed
 import "this" Std.Cat.NaturalTransformation
 import "this" Std.Cat.Commutative
 import "this" Std.Cat.Op
 import "this" Std.Cat.Product
 
 
-class CatCommutative cat f => CatMonoidal (cat :: k -> k -> Type) (f :: k -> k -> k) where
+class (Category cat, CatCommutative cat f) => CatMonoidal (cat :: k -> k -> Type) (f :: k -> k -> k) where
     type Id cat f :: k
     idl :: Iso cat (Id cat f `f` a) a
     idl = (to idr . commute) :<-> (commute . from idr)
     idr :: Iso cat (a `f` Id cat f) a
     idr = (to idl . commute) :<-> (commute . from idl)
     {-# MINIMAL idl | idr #-}
+
+class (CatMonoidal cat (Product cat), Closed cat) => CatMonoidalClosed cat where
+     -- | lifted version of (.)
+    (<.>) :: Exp cat b c `cat` Exp cat (Exp cat a b) (Exp cat a c)
+    infixr 9 <.>
+    hom :: a `cat` b -> Id cat (Product cat) `cat` (Exp cat a b)
+
 
 instance CatMonoidal cat f => CatMonoidal (Op cat) f where
     type Id (Op cat) f = Id cat f
@@ -48,3 +57,6 @@ instance CatMonoidal HASK Either where
     type Id HASK Either = Void
     idl = (absurd ||| id) :<-> Right
 
+instance CatMonoidalClosed HASK where
+    (<.>) = (.)
+    hom = const

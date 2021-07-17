@@ -13,7 +13,6 @@ module Std.Basic
 import "base" Data.Eq
 import "base" Data.Either ( Either(..) )
 import "base" GHC.IO.Unsafe ( unsafePerformIO )
-import "base" Data.Coerce ( Coercible )
 import "base" Control.Exception ( SomeException, try, evaluate )
 
 import "this" Std.Partial

@@ -33,8 +33,8 @@ mapToList# :: c <$> l => Proxy# c -> (forall a. c a => a -> b) -> HList l -> [b]
 mapToList# _ _ HNil = []
 mapToList# p f (a ::: as) = f a : mapToList# p f as
 
-toList :: forall a l. (==) a <$> l => HList l -> [a]
-toList = mapToList# (proxy# @((==) a)) (from (same @a))
+toListH :: forall a l. (==) a <$> l => HList l -> [a]
+toListH = mapToList# (proxy# @((==) a)) (from (same @a))
 
 explodeH :: forall l. HList l -> [Union l]
 explodeH = explodeH' 0

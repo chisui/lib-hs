@@ -17,16 +17,16 @@ data HListCat f as bs where
     HLCId  :: HListCat f as as
     HLCVal :: BiHListT f as bs -> HListCat f as bs
 
-instance Semigroupoid cat => Semigroupoid (BiHListT cat) where
+instance Semigroupoid cat => Semigroupoid' Unconstrained (BiHListT cat) where
     BiHNil . BiHNil = BiHNil
     BiHCons f fs . BiHCons g gs = BiHCons (f . g) (fs . gs)
-instance Semigroupoid cat => Semigroupoid (HListCat cat) where
+instance Semigroupoid cat => Semigroupoid' Unconstrained (HListCat cat) where
     HLCId . f = f
     f . HLCId = f
     HLCVal a . HLCVal b = HLCVal (a . b)
-instance CatId cat => CatId (HListCat cat) where
+instance CatId cat => CatId' Unconstrained (HListCat cat) where
     id = HLCId 
-instance Category cat => Category (HListCat cat)
+instance Category cat => Category' Unconstrained (HListCat cat)
 
 instance LeftFunctor f => CatLeftFunctor' Unconstrained Unconstrained (HListCat HASK) HASK (BiHListT f) where
     left' HLCId l = l

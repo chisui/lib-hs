@@ -9,8 +9,8 @@ import "this" Std.Cat.Bifunctor
 
 class Cartesian cat => Closed cat where
     type Exp cat :: k -> k -> k
-    apply :: Product cat (Exp cat a b) a `cat` b
-    curry :: (Product cat a b `cat` c) -> a `cat` Exp cat b c
+    apply   :: Product cat (Exp cat a b) a `cat` b
+    curry   :: (Product cat a b `cat` c) -> a `cat` Exp cat b c
     uncurry :: (a `cat` Exp cat b c) -> Product cat a b `cat` c
 
 const :: Closed cat => a `cat` Exp cat b a

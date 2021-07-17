@@ -6,7 +6,6 @@ module Std.BinOp where
 import "base" Prelude qualified as Base
 import "base" Data.Semigroup qualified as Base ( Min(..), Max(..) )
 import "base" Data.Monoid qualified as Base( First(..), Last(..) )
-import "base" Data.Coerce ( Coercible )
 
 import "ghc-prim" GHC.Prim ( Proxy#, proxy# )
 
@@ -233,12 +232,16 @@ deriving via (Integrally Base.Int) instance BinOp 'Div  Base.Int
 deriving via (Numeric    Base.Int) instance InverseOp 'Add  Base.Int
 deriving via (Numeric    Base.Int) instance InverseOp 'Sub  Base.Int
 
-deriving via (Numeric    Base.Integer) instance BinOp 'Add  Base.Integer
-deriving via (Numeric    Base.Integer) instance BinOp 'Sub  Base.Integer
-deriving via (Numeric    Base.Integer) instance BinOp 'Mult Base.Integer
-deriving via (Integrally Base.Integer) instance BinOp 'Div  Base.Integer
-deriving via (Numeric    Base.Integer) instance InverseOp 'Add  Base.Integer
-deriving via (Numeric    Base.Integer) instance InverseOp 'Sub  Base.Integer
+instance BinOp 'Add  Base.Integer where op# _ = (Base.+)
+instance BinOp 'Sub  Base.Integer where op# _ = (Base.-)
+instance BinOp 'Mult Base.Integer where op# _ = (Base.*)
+instance BinOp 'Div  Base.Integer where op# _ = (Base.div)
+instance InverseOp 'Add  Base.Integer where
+    type InvOp 'Add Base.Integer = 'Sub
+    inv# _ = Base.negate
+instance InverseOp 'Sub  Base.Integer where
+    type InvOp 'Sub Base.Integer = 'Add
+    inv# _ = Base.negate
 
 deriving via (Numeric    Base.Word) instance BinOp 'Add  Base.Word
 deriving via (Numeric    Base.Word) instance BinOp 'Sub  Base.Word

@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
@@ -16,6 +17,7 @@ import "this" Std.Partial
 import "this" Std.Cat
 import "this" Std.Maybe ()
 import "this" Std.Type
+import "this" Std.TypeError
 
 
 liftProxy :: Proxy# a -> Proxy a
@@ -28,6 +30,7 @@ class Singleton (k :: k0) where
     type S k
 class Singleton k => Known (t :: k) where
     val :: proxy t -> S k
+    val _ = val# (proxy# @t) 
     val# :: Proxy# t -> S k
 
 val' :: forall t. Known t => S' t
@@ -37,6 +40,9 @@ class Singleton k => Promote (t :: Totallity) (k :: k0) | k -> t where
     promote :: proxy k -> S k -> Res t (SomeSingleton k)
 
 type S' (t :: k) = S k
+
+instance Singleton Type where type S Type = [typeError|Can only construct singleton for higher kinded types|]
+instance Known (t :: Type) where val# _ = Base.error "Can only construct singleton for higher kinded types"
 
 instance Singleton () where
     type S () = ()

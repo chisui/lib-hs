@@ -4,10 +4,11 @@
 module Std.Vec where
 
 import "base" Prelude ( Integer )
+import "base" Prelude qualified as Base
 import "base" Unsafe.Coerce
 
 import "this" Std.HList
-import "this" Std.Cat.Foldable
+import "this" Std.Bool
 import "this" Std.Type
 import "this" Std.Singleton
 import "this" Std.Debug
@@ -16,11 +17,29 @@ import "this" Std.Group
 import "this" Std.Ord
 import "this" Std.Literal
 import "this" Std.Cat
+import "this" Std.Cat.Foldable
+import "this" Std.Cat.Traversable
 
 
 data Vec n a where
-    VNil :: Vec 0 a
+    VNil  :: Vec 0 a
     VCons :: a -> Vec (n - 1) a -> Vec n a
+
+instance HasItems (Vec n a) where type Item (Vec n a) = a
+instance ToList 'Total (Vec n a) where
+    toList VNil = []
+    toList (VCons a as) = a : toList as
+instance Known n => FromList (Vec n a) where
+    fromList l
+        | (Base.length l)  /= fromInteger (val' @n) = error $ "expected exactly " ++ show (val' @n) ++ " elements but got " ++ show (Base.length l)
+        | otherwise = unsafeFromList l
+      where
+        unsafeFromList :: [a] -> Vec m a
+        unsafeFromList []     = unsafeCoerce VNil
+        unsafeFromList (a:as) = unsafeCoerce (VCons a (unsafeFromList as))
+
+instance (Known n, FromInteger a) => FromInteger (Vec n a) where
+    fromInteger = pure . fromInteger
 
 instance CatIsomorphic HASK (Vec 0 a) (HList '[]) where
     catIso = const HNil :<-> const VNil
@@ -60,14 +79,19 @@ instance Foldable' Unconstrained (Vec n) where
     foldMap _ VNil = mempty
     foldMap f (VCons a as) = f a ++ (foldMap f as)
 
-instance (Known n, Magma op a) => BinOp op (Vec n a) where
-    op# p = lift2 (op# p)
-instance (Known n, Magma op a, IdentityOp op a) => IdentityOp op (Vec n a) where
-    identity# p = identity# p
+instance Known n => Traversable (Vec n) where
+    sequence = map fromList . sequence . toList
+
+dot :: (Known n, Field a) => Vec n a -> Vec n a -> a
+dot a b = sum (a * b)
+
+instance (Known n, Magma       op a) => BinOp         op (Vec n a) where op# p = lift2 (op# p)
+instance (Known n, UnitalMagma op a) => IdentityOp    op (Vec n a) where identity# p = identity# p
+instance (Known n, Quasigroup  op a) => InverseOp     op (Vec n a) where
+    type InvOp op (Vec n a) = InvOp op a
+    inv# p = map (inv# p)
 instance (Known n, AssociativeOp op a) => AssociativeOp op (Vec n a)
-instance (Known n, Idempotent op a) => Idempotent op (Vec n a)
+instance (Known n, Idempotent    op a) => Idempotent    op (Vec n a)
 instance (Known n, CommutativeOp op a) => CommutativeOp op (Vec n a)
-instance (Known n, Upper op a) => Upper op (Vec n a) where
-    top# p = pure (top# p)
-instance (Known n, Lower op a) => Lower op (Vec n a) where
-    bot# p = pure (bot# p)
+instance (Known n, Upper         op a) => Upper         op (Vec n a) where top# p = pure (top# p)
+instance (Known n, Lower         op a) => Lower         op (Vec n a) where bot# p = pure (bot# p)

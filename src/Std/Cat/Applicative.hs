@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Std.Cat.Applicative where
 
 import "base" Data.Bool ( Bool(..) ) 
@@ -19,7 +21,7 @@ import "this" Std.Cat.Limit
 import "this" Std.Cat.Closed
 
 
-class EndoFunctor' c cat f => CatPure' c (cat :: k -> k -> Type) f | f -> c where
+class EndoFunctor' c cat f => CatPure' (c :: k -> Constraint) (cat :: k -> k -> Type) (f :: k -> k) | f -> c where
     catPure :: c a => a `cat` f a
 type Pure' c = CatPure' c HASK
 type CatPure = CatPure' Unconstrained
@@ -27,8 +29,8 @@ type Pure = CatPure HASK
 pure :: forall f a c. (Pure' c f, c a) => a -> f a
 pure = catPure
 
-class EndoFunctor' c cat f => CatAp' c cat f | f -> c where
-    (<**>) :: (c a, c b) => f (a `cat` b) -> f a `cat` f b
+class Closed cat => CatAp' c cat f | f -> c where
+    (<**>) :: (c a, c b) => f (Exp cat a b) `cat` Exp cat (f a) (f b)
 infixl 4 <**>
 type Ap' c = CatAp' c HASK
 type CatAp = CatAp' Unconstrained
@@ -39,11 +41,11 @@ type Ap    = CatAp HASK
 infixl 4 <*>
 
 infixl 4 *>
-(*>) :: (Ap' c f, c a, c b, c (b -> b)) => f a -> f b -> f b
+(*>) :: (Functor' c f, Ap' c f, c a, c b, c (b -> b)) => f a -> f b -> f b
 a *> b = (id <$ a) <*> b
 
 infixl 4 <*
-(<*) :: (Ap' c f, c a, c b, c (b -> a)) => f a -> f b -> f a
+(<*) :: (Functor' c f, Ap' c f, c a, c b, c (b -> a)) => f a -> f b -> f a
 a <* b = (const <$> a) <*> b
 
 class (Closed cat, EndoFunctor' c cat f) => CatLift2' c cat f | f -> c where
@@ -128,6 +130,12 @@ instance Base.Alternative f => CatCombine' Unconstrained HASK (Basic1 f) where
     combine :: forall a. (Basic1 f a, Basic1 f a) -> Basic1 f a
     combine = coerce (uncurry (Base.<|>) :: (f a, f a) -> f a)
 instance Base.Alternative f => CatAlternative' Unconstrained HASK (Basic1 f)
+
+instance Applicative f => Base.Applicative (Basic1 f) where
+    pure :: forall a. a -> Basic1 f a
+    pure = coerce (pure :: a -> f a)
+    (<*>) :: forall a b. Basic1 f (a -> b) -> Basic1 f a -> Basic1 f b
+    (<*>) = coerce ((<*>) :: f (a -> b) -> f a -> f b)
 
 deriving via (Basic1 Base.Identity) instance CatPure'        Unconstrained HASK Base.Identity
 deriving via (Basic1 Base.Identity) instance CatAp'          Unconstrained HASK Base.Identity

@@ -14,6 +14,7 @@ import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Closed
 import "this" Std.Cat.Limit
+import "this" Std.Cat.Monoidal
 import "this" Std.Cat.Distributive
 import "this" Std.Cat.Associative
 import "this" Std.Cat.Op
@@ -37,17 +38,17 @@ liftKleisli f = Kleisli . f . unKleisli
 instance CatMonad cat m => CatArrow HASK cat (CatKleisli cat m) where
     catArr f = Kleisli (catPure . f)
 
-instance (CatMonad cat m, Semigroupoid cat) => Semigroupoid (CatKleisli cat m) where
+instance (CatMonad cat m, CatMonoidalClosed cat) => Semigroupoid' Unconstrained (CatKleisli cat m) where
     (.) :: forall a b c. CatKleisli cat m b c -> CatKleisli cat m a b -> CatKleisli cat m a c
     (.) = to coerce ((<=<) :: b `cat` m c -> a `cat` m b -> a `cat` m c)
-instance (CatPure cat m, CatId cat) => CatId (CatKleisli cat m) where
+instance (CatPure cat m, CatId cat) => CatId' Unconstrained (CatKleisli cat m) where
     id :: forall a. CatKleisli cat m a a
     id = to coerce (catPure :: a `cat` m a)
-instance (CatMonad cat m, Category cat) => Category (CatKleisli cat m)
+instance (CatMonad cat m, CatMonoidalClosed cat) => Category' Unconstrained (CatKleisli cat m)
 
 
 instance ( CatMonad cat m
-         , Cartesian cat
+         , CatMonoidalClosed cat
          , EndoBifunctor (CatKleisli cat m) (Product cat)
          ) => Cartesian (CatKleisli cat m) where
     type Product (CatKleisli cat m) = Product cat
@@ -86,6 +87,6 @@ instance (Associative f, Distributive m, Bifunctor' c0 c1 f) => CatBifunctor' c0
 
 instance CatMonad cat m => CatLeftFunctor' Unconstrained Unconstrained (Op cat) HASK (CatKleisli cat m) where
     left' (Op f) (Kleisli g) = Kleisli (g . f)
-instance CatMonad cat m => CatRightFunctor' Unconstrained Unconstrained cat HASK (CatKleisli cat m) where
+instance (CatMonoidalClosed cat, CatMonad cat m) => CatRightFunctor' Unconstrained Unconstrained cat HASK (CatKleisli cat m) where
     right' f (Kleisli g) = Kleisli (catPure . f <=< g)
-instance CatMonad cat m => CatBifunctor' Unconstrained Unconstrained (Op cat) cat HASK (CatKleisli cat m)
+instance (CatMonoidalClosed cat, CatMonad cat m) => CatBifunctor' Unconstrained Unconstrained (Op cat) cat HASK (CatKleisli cat m)

@@ -2,7 +2,6 @@ module Std.Cat.NaturalTransformation where
 
 import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
-import "this" Std.Cat.Hom
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
 import "this" Std.Cat.Product
@@ -18,12 +17,12 @@ eta (NT f) = f
 η = eta
 type (~>) = NT HASK
 
-instance Semigroupoid cat => Semigroupoid (NT cat) where NT f . NT g = NT (f . g)
-instance CatId        cat => CatId        (NT cat) where id = NT id
-instance Category     cat => Category     (NT cat)
-instance Groupoid     cat => Groupoid     (NT cat) where catInv (NT f) = NT (catInv f)
+instance Semigroupoid cat => Semigroupoid' Unconstrained (NT cat) where NT f . NT g = NT (f . g)
+instance CatId        cat => CatId'        Unconstrained (NT cat) where id = NT id
+instance Category     cat => Category'     Unconstrained (NT cat)
+instance Groupoid     cat => Groupoid'     Unconstrained (NT cat) where catInv (NT f) = NT (catInv f)
 
-deriving via (Hom (NT cat) a) instance Category cat => CatFunctor' Unconstrained (NT cat) HASK (NT cat a)
+instance Category cat => CatFunctor' Unconstrained (NT cat) HASK (NT cat a) where catMap = (.)
 
 instance Cartesian (~>) where
     type Product (~>) = Product1
@@ -37,9 +36,6 @@ instance Cocartesian (~>) where
     rght = NT (Prod1 . rght)
     NT f ||| NT g = NT ((f ||| g) . unProd1)
 
-yoneda :: Category cat => cat a ~> f -> f a
-yoneda = (`eta` id)
-
 instance EndoLeftFunctor  HASK f => CatLeftFunctor'  Unconstrained Unconstrained (~>) (~>)      (Prod1 f) where left'     (NT f)        = NT (liftProd1 (left f))
 instance EndoRightFunctor HASK f => CatRightFunctor' Unconstrained Unconstrained (~>) (~>)      (Prod1 f) where right'    (NT f)        = NT (liftProd1 (right f))
 instance EndoBifunctor    HASK f => CatBifunctor'    Unconstrained Unconstrained (~>) (~>) (~>) (Prod1 f) where catBimap' (NT f) (NT g) = NT (liftProd1 (catBimap f g))
@@ -51,10 +47,10 @@ eta2 :: forall f g cat. NT2 cat f g -> (forall a b. f a b `cat` g a b)
 eta2 (NT2 f) = f
 type (:->) = NT2 HASK
 
-instance Semigroupoid cat => Semigroupoid (NT2 cat) where NT2 f . NT2 g = NT2 (f . g)
-instance CatId        cat => CatId        (NT2 cat) where id = NT2 id
-instance Category     cat => Category     (NT2 cat)
-instance Groupoid     cat => Groupoid     (NT2 cat) where catInv (NT2 f) = NT2 (catInv f)
+instance Semigroupoid cat => Semigroupoid' Unconstrained (NT2 cat) where NT2 f . NT2 g = NT2 (f . g)
+instance CatId        cat => CatId'        Unconstrained (NT2 cat) where id = NT2 id
+instance Category     cat => Category'     Unconstrained (NT2 cat)
+instance Groupoid     cat => Groupoid'     Unconstrained (NT2 cat) where catInv (NT2 f) = NT2 (catInv f)
 
 
 instance Cartesian (:->) where

@@ -42,8 +42,8 @@ instance TotalBinOp op a => Magma op a
 
 class Magma op a => AssociativeOp (op :: k) a
 
-class    TotalInverseOp op a => Quasigroup op a
-instance TotalInverseOp op a => Quasigroup op a
+class    (Magma op a, TotalInverseOp op a) => Quasigroup op a
+instance (Magma op a, TotalInverseOp op a) => Quasigroup op a
 
 
 class Magma op a => CommutativeOp (op :: k) a
@@ -100,27 +100,28 @@ instance (AssociativeOp op a, CommutativeOp op a, Idempotent op a) => Semilattic
 class    (Magma f a, Magma g a) => DistributiveOp f g a
 
 
-class    (Abelian f a, Monoid g a, DistributiveOp f g a, DistributiveOp g f a) => Ring f g a
-instance (Abelian f a, Monoid g a, DistributiveOp f g a, DistributiveOp g f a) => Ring f g a
+class    (Abelian f a, Monoid g a, DistributiveOp f g a) => Ring' f g a
+instance (Abelian f a, Monoid g a, DistributiveOp f g a) => Ring' f g a
+type Ring = Ring' 'Add 'Mult
 
-class    (Ring f g a, CommutativeOp g a) => CommutativeRing f g a
-instance (Ring f g a, CommutativeOp g a) => CommutativeRing f g a
+class    (Ring' f g a, CommutativeOp g a) => CommutativeRing' f g a
+instance (Ring' f g a, CommutativeOp g a) => CommutativeRing' f g a
+type CommutativeRing = CommutativeRing' 'Add 'Mult
 
-class    (CommutativeRing f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field f g a
-instance (CommutativeRing f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field f g a
+class    (CommutativeRing' f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field' f g a
+instance (CommutativeRing' f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field' f g a
+type Field = Field' 'Add 'Mult
 
 -- instances
 
 instance AssociativeOp  'Add Base.Int
-instance CommutativeOp    'Add Base.Int
+instance CommutativeOp  'Add Base.Int
 instance AssociativeOp  'Mult Base.Int
-instance DistributiveOp 'Mult 'Add Base.Int
 instance DistributiveOp 'Add 'Mult Base.Int
 
 instance AssociativeOp  'Add Base.Integer
-instance CommutativeOp    'Add Base.Integer
+instance CommutativeOp  'Add Base.Integer
 instance AssociativeOp  'Mult Base.Integer
-instance DistributiveOp 'Mult 'Add Base.Integer
 instance DistributiveOp 'Add 'Mult Base.Integer
 
 instance AssociativeOp 'Canonic Base.String

@@ -3,10 +3,13 @@ module Std.Cat.Op where
 
 import "base" Data.Coerce
 
+import "this" Std.Type
 import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
 import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Cocartesian
+import "this" Std.Cat.Closed
+import "this" Std.Cat.Commutative
 import "this" Std.Cat.Limit
 import "this" Std.Cat.Bifunctor
 
@@ -21,9 +24,9 @@ type family OpOf cat where
 liftOp :: (a `cat` b -> a' `cat'` b') -> Op cat b a -> Op cat' b' a'
 liftOp = coerce
 
-instance Semigroupoid cat => Semigroupoid (Op cat) where Op g . Op f = Op (f . g)
-instance CatId        cat => CatId        (Op cat) where id = Op id
-instance Category     cat => Category     (Op cat)
+instance Semigroupoid' c cat => Semigroupoid' c (Op cat) where Op g . Op f = Op (f . g)
+instance CatId'        c cat => CatId'        c (Op cat) where id = Op id
+instance Category'     c cat => Category'     c (Op cat)
 
 pam :: CatFunctor (Op c0) c1 f => b `c0` a -> f a `c1` f b
 pam = catMap . Op
@@ -53,9 +56,24 @@ instance Cartesian cat => Cocartesian (Op cat) where
     codiagonal = Op diagonal
     Op f ||| Op g = Op (f &&& g)
 
+class Cocartesian cat => Coclosed (cat :: k -> k -> Type) where
+    type Coexp cat :: k -> k -> k
+    (>.<) :: cat (Coexp cat (Coexp cat a b) (Coexp cat a c)) (Coexp cat b c)
+    unapply   :: b `cat` (Coproduct cat (Coexp cat a b) a)
+    cocurry   :: c `cat` (Coproduct cat a b) -> Coexp cat b c `cat` a
+    councurry :: Coexp cat b c `cat` a -> c `cat` Coproduct cat a b
+
+instance Coclosed cat => Closed (Op cat) where
+    type Exp (Op cat) = Coexp cat
+    apply = Op unapply
+    curry   (Op f) = Op (cocurry f)
+    uncurry (Op f) = Op (councurry f)
+
 instance CatInitial cat => CatTerminal (Op cat) where
     type Terminal (Op cat) = Initial cat
     terminate = Op initiate
 instance CatTerminal cat => CatInitial (Op cat) where
     type Initial (Op cat) = Terminal cat
     initiate = Op terminate
+
+instance CatCommutative cat  f => CatCommutative (Op cat) f where commute = Op commute

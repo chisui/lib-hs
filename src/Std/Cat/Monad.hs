@@ -1,14 +1,16 @@
 module Std.Cat.Monad where
 
 import "base" Data.Bool ( Bool )
-import "base" Data.Coerce
 import "base" Control.Monad qualified as Base
 import "base" Data.Functor.Identity qualified as Base
 
 import "this" Std.Type
 import "this" Std.Cat.Class
+import "this" Std.Cat.Iso
 import "this" Std.Cat.Functor
+import "this" Std.Cat.Cartesian
 import "this" Std.Cat.Closed
+import "this" Std.Cat.Monoidal
 import "this" Std.Cat.Applicative
 
 
@@ -18,14 +20,14 @@ type CatJoin = CatJoin' Unconstrained
 type Join' c = CatJoin' c HASK
 type Join    = CatJoin HASK
 
-class CatBind' c cat m | m -> c where
-    (=<<) :: (c a, c b) => a `cat` m b -> m a `cat` m b
+class Closed cat => CatBind' (c :: k -> Constraint) (cat :: k -> k -> Type) (m :: k -> k) | m -> c where
+    (=<<) :: (c a, c b) => Exp cat a (m b) `cat` Exp cat (m a) (m b)
 infixr 1 =<<
 type CatBind = CatBind' Unconstrained
 type Bind' c = CatBind' c HASK
 type Bind    = CatBind HASK
 
-class (Category cat, EndoFunctor' c cat f, CatPure' c cat f, CatBind' c cat f, CatJoin' c cat f) => CatMonad' c (cat :: k -> k -> Type) f | f -> c
+class (Category cat, EndoFunctor' c cat f, CatPure' c cat f, CatBind' c cat f, CatJoin' c cat f) => CatMonad' (c :: k -> Constraint) (cat :: k -> k -> Type) f | f -> c
 type CatMonad = CatMonad' Unconstrained
 type Monad' c = CatMonad' c HASK
 type Monad    = CatMonad HASK
@@ -34,8 +36,8 @@ type Monad    = CatMonad HASK
 m >>= f = f =<< m
 infixl 1 >>=
 
-(<=<) :: (CatMonad' c cat m, c a, c b, c d) => b `cat` m d -> a `cat` m b -> a `cat` m d
-f <=< g = (=<<) f . (=<<) g . catPure
+(<=<) :: forall cat m a b d c. (CatMonoidalClosed cat, CatMonad' c cat m, c a, c b, c d) => (b `cat` m d) -> (a `cat` m b) -> (a `cat` m d)
+f <=< g = (uncurry (uncurry (<.>) . ((=<<) . hom f &&& hom g))) . from idl
 infixr 1 <=<
 
 filter :: (Alternative f, Monad f) => (a -> Bool) -> f a -> f a
@@ -43,7 +45,7 @@ filter p = (=<<) (\a -> guard (p a) $> a)
 
 instance Base.Monad f => CatBind' Unconstrained HASK (Basic1 f) where
     (=<<) :: forall a b. (a -> Basic1 f b) -> Basic1 f a -> Basic1 f b
-    (=<<) = coerce ((Base.=<<) :: (a -> f b) -> f a -> f b)
+    (=<<) = to coerce ((Base.=<<) :: (a -> f b) -> f a -> f b)
 instance Base.Monad f => CatJoin' Unconstrained HASK (Basic1 f) where
     join :: forall a. Basic1 f (Basic1 f a) -> Basic1 f a
     join (Basic1 f) = Basic1 (getBasic1 Base.=<< f)

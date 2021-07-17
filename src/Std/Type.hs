@@ -20,6 +20,7 @@ module Std.Type
 
 import "base" Prelude ( Bool(..) )
 import "base" Data.Type.Equality as Exp (type (:~:) (..))
+import "base" Data.Typeable as Exp (Typeable)
 import "base" Data.Type.Bool ( type (&&) )
 import "base" Data.Kind as Exp ( Type, Constraint )
 import "base" GHC.Exts as Exp ( Any )
