@@ -17,6 +17,7 @@ import "this" Std.Cat.Commutative as Exp
 import "this" Std.Cat.Comonad as Exp
 import "this" Std.Cat.Compose as Exp
 import "this" Std.Cat.Distributive as Exp
+import "this" Std.Cat.Representable as Exp
 import "this" Std.Cat.Fix as Exp
 import "this" Std.Cat.FullyFaithful as Exp
 import "this" Std.Cat.Functor as Exp

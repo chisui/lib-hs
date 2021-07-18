@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Std.Cat.Hom where
 
@@ -26,7 +27,6 @@ instance Category cat => CatRightFunctor' Unconstrained Unconstrained cat HASK (
     right' = catMap
 
 instance Category cat => CatBifunctor' Unconstrained Unconstrained (Op cat) cat HASK (Hom cat)
-
 
 instance Category cat => CatLeftFunctor' Unconstrained Unconstrained cat HASK (Op cat) where left' f (Op g) = Op (f . g)
 instance Category cat => CatBifunctor'   Unconstrained Unconstrained cat (Op cat) HASK (Op cat)

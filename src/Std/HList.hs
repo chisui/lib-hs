@@ -105,7 +105,7 @@ instance (Eq a, Eq (HList as)) => Eq (HList (a ': as)) where
 
 instance Ord' 'Total (HList '[]) where
     compare' _ _ = pure EQ
-instance (Ord' u a, Ord' v (HList as), t ~ MinTotallity u v) => Ord' t (HList (a ': as)) where
+instance (Ord' u a, Ord' v (HList as), t ~ MinTotality u v) => Ord' t (HList (a ': as)) where
     compare' (a ::: as) (b ::: bs) = zipRes (++) (compare' a b) (compare' as bs)
 
 
@@ -121,8 +121,8 @@ instance ( TotalBinOp 'Canonic a
              -> OpRes 'Canonic (HList as)
              -> OpRes 'Canonic (HList (a : as))
         zip' = zipDirectRes#
-                (proxy# @(OpTotallity 'Canonic a))
-                (proxy# @(OpTotallity 'Canonic (HList as)))
+                (proxy# @(OpTotality 'Canonic a))
+                (proxy# @(OpTotality 'Canonic (HList as)))
 
 instance IdentityOp 'Canonic (HList '[]) where
     identity# _ = HNil
@@ -136,5 +136,5 @@ instance ( TotalBinOp 'Canonic a, IdentityOp 'Canonic a
              -> OpRes 'Canonic (HList as)
              -> OpRes 'Canonic (HList (a : as))
         zip' = zipDirectRes#
-                (proxy# @(OpTotallity 'Canonic a))
-                (proxy# @(OpTotallity 'Canonic (HList as)))
+                (proxy# @(OpTotality 'Canonic a))
+                (proxy# @(OpTotality 'Canonic (HList as)))

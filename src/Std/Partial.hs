@@ -7,12 +7,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 module Std.Partial
-    ( Totallity(..), Res(..), DirectRes, TotalRes, PartialRes
+    ( Totality(..), Res(..), DirectRes, TotalRes, PartialRes
     , MapDirectRes(..), ZipDirectRes(..)
     , Undefinable(..)
     , unpackRes
     , fromRes, toRes, total, total2
-    , MinTotallity, joinRes, zipRes, zipRes3, zipRes4
+    , MinTotality, joinRes, zipRes, zipRes3, zipRes4
     , (.?), (=<<?), (?>>=)
     , type (-!>), type (-?>)
     ) where
@@ -28,12 +28,12 @@ import "this" Std.Generic
 import "this" Std.Cat
 
 
-data Totallity
+data Totality
     = Partial
     | Total
   deriving (Show, Generic)
 
-data Res (t :: Totallity) (a :: Type) where
+data Res (t :: Totality) (a :: Type) where
     FullRes  :: a -> Res t a
     EmptyRes :: Res 'Partial a
 
@@ -43,22 +43,32 @@ type PartialRes = Res 'Partial
 type (-!>) a b = a -> Res 'Total b
 type (-?>) a b = a -> Res 'Partial b
 
-type family DirectRes (t :: Totallity) a where
+type family DirectRes (t :: Totality) a where
     DirectRes 'Total   a = a
     DirectRes 'Partial a = PartialRes a
 
-class MapDirectRes (t :: Totallity) where
+class MapDirectRes (t :: Totality) where
     mapDirectRes# :: Proxy# t -> (a -> b) -> DirectRes t a -> DirectRes t b
     mapDirectRes :: forall a b proxy. proxy t -> (a -> b) -> DirectRes t a -> DirectRes t b
     mapDirectRes _ = mapDirectRes# (proxy# @t)
+    joinDirectRes# :: Proxy# t -> Proxy# a -> DirectRes t (DirectRes t a) -> DirectRes t a
+    bindDirectRes# :: forall a b. Proxy# t -> Proxy# b -> (a -> DirectRes t b) -> DirectRes t a -> DirectRes t b
+    bindDirectRes# pt pb f = joinDirectRes# pt pb . mapDirectRes# pt f
+    lift2DirectRes# :: forall a b c. Proxy# t -> Proxy# c -> (a -> b -> c) -> DirectRes t a -> DirectRes t b -> DirectRes t c
 instance MapDirectRes 'Partial where
     mapDirectRes# _ f (FullRes a) = FullRes (f a)
     mapDirectRes# _ _ EmptyRes    = EmptyRes
+    joinDirectRes# _ _ (FullRes r) = r
+    joinDirectRes# _ _ EmptyRes = EmptyRes
+    lift2DirectRes# _ _ f (FullRes a) (FullRes b) = FullRes (f a b)
+    lift2DirectRes# _ _ _ _ _ = EmptyRes
 instance MapDirectRes 'Total where
     mapDirectRes# _ = id
+    joinDirectRes# _ _ = id
+    lift2DirectRes# _ _ f a b = f a b
 
-class (MapDirectRes t, MapDirectRes t') => ZipDirectRes (t :: Totallity) (t' :: Totallity) where
-    zipDirectRes# :: Proxy# t -> Proxy# t' -> (a -> b -> c) -> DirectRes t a -> DirectRes t' b -> DirectRes (MinTotallity t t') c
+class (MapDirectRes t, MapDirectRes t') => ZipDirectRes (t :: Totality) (t' :: Totality) where
+    zipDirectRes# :: Proxy# t -> Proxy# t' -> (a -> b -> c) -> DirectRes t a -> DirectRes t' b -> DirectRes (MinTotality t t') c
 
 instance ZipDirectRes 'Total 'Total where
     zipDirectRes# _ _ f a b = f a b
@@ -139,32 +149,32 @@ total2 :: (a -> b -> Res 'Total c) -> a -> b -> c
 total2 f a b = total (f a b)
 
 
-type family MinTotallity (t0 :: Totallity) (t1 :: Totallity) :: Totallity where
-    MinTotallity 'Total 'Total = 'Total
-    MinTotallity a b = 'Partial
+type family MinTotality (t0 :: Totality) (t1 :: Totality) :: Totality where
+    MinTotality 'Total 'Total = 'Total
+    MinTotality a b = 'Partial
 
-joinRes :: Res t0 (Res t1 a) -> Res (t0 `MinTotallity` t1) a
+joinRes :: Res t0 (Res t1 a) -> Res (t0 `MinTotality` t1) a
 joinRes (FullRes (FullRes a)) = FullRes a
 joinRes (FullRes EmptyRes) = EmptyRes
 joinRes EmptyRes = EmptyRes
 
-zipRes :: forall t0 t1 a b c. (a -> b -> c) -> Res t0 a -> Res t1 b -> Res (t0 `MinTotallity` t1) c
+zipRes :: forall t0 t1 a b c. (a -> b -> c) -> Res t0 a -> Res t1 b -> Res (t0 `MinTotality` t1) c
 zipRes f (FullRes a) (FullRes b) = pure (f a b)
 zipRes _ EmptyRes _ = EmptyRes
 zipRes _ _ EmptyRes = EmptyRes
 
-zipRes3 :: (a -> b -> c -> d) -> Res t0 a -> Res t1 b -> Res t2 c -> Res (t0 `MinTotallity` t1 `MinTotallity` t2) d
+zipRes3 :: (a -> b -> c -> d) -> Res t0 a -> Res t1 b -> Res t2 c -> Res (t0 `MinTotality` t1 `MinTotality` t2) d
 zipRes3 f a = zipRes id . zipRes f a
 
-zipRes4 :: (a -> b -> c -> d -> e) -> Res t0 a -> Res t1 b -> Res t2 c -> Res t3 d-> Res (t0 `MinTotallity` t1 `MinTotallity` t2 `MinTotallity` t3) e
+zipRes4 :: (a -> b -> c -> d -> e) -> Res t0 a -> Res t1 b -> Res t2 c -> Res t3 d-> Res (t0 `MinTotality` t1 `MinTotality` t2 `MinTotality` t3) e
 zipRes4 f a b = zipRes id . zipRes3 f a b
 
 
-(.?) :: (b -> Res t1 c) -> (a -> Res t0 b) -> a -> Res (t0 `MinTotallity` t1) c
+(.?) :: (b -> Res t1 c) -> (a -> Res t0 b) -> a -> Res (t0 `MinTotality` t1) c
 (.?) f g a = f =<<? g a
 
-(=<<?) :: (a -> Res t1 b) -> Res t0 a -> Res (t0 `MinTotallity` t1) b
+(=<<?) :: (a -> Res t1 b) -> Res t0 a -> Res (t0 `MinTotality` t1) b
 (=<<?) f = joinRes . map f
 
-(?>>=) :: Res t0 a -> (a -> Res t1 b) -> Res (t0 `MinTotallity` t1) b
+(?>>=) :: Res t0 a -> (a -> Res t1 b) -> Res (t0 `MinTotality` t1) b
 (?>>=) = flip (=<<?)

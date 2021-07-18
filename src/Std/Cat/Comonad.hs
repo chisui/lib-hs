@@ -12,10 +12,9 @@ import "this" Std.Cat.Closed
 import "this" Std.Cat.Applicative
 import "this" Std.Cat.Monad
 import "this" Std.Cat.Op
-import "this" Std.Cat.Functor
 
 
-class EndoFunctor' c cat f => CatExtract' c cat f | f -> c where
+class CatExtract' c cat f | f -> c where
     extract :: c a => f a `cat` a
 type CatExtract = CatExtract' Unconstrained
 type Extract' c = CatExtract' c HASK
@@ -31,13 +30,17 @@ type Extend    = CatExtend HASK
 (=>>) = flip (<<=)
 
 
-class EndoFunctor' c cat f => CatDuplicate' c cat f | f -> c where
+class CatDuplicate' c cat f | f -> c where
     duplicate :: (c a, c (f a)) => f a `cat` f (f a)
 type CatDuplicate = CatDuplicate' Unconstrained
 type Duplicate' c = CatDuplicate' c HASK
 type Duplicate    = CatDuplicate HASK
 
-class (Category cat, CatExtract' c cat f, CatExtend' c cat f, CatDuplicate' c cat f) => CatComonad' c cat f | f -> c
+class ( Category cat
+      , CatExtract' c cat f
+      , CatExtend' c cat f
+      , CatDuplicate' c cat f
+      ) => CatComonad' c cat f | f -> c
 type CatComonad = CatComonad' Unconstrained
 type Comonad' c = CatComonad' c HASK
 type Comonad    = CatComonad HASK
@@ -60,8 +63,8 @@ type CatCoapplicative = CatCoapplicative' Unconstrained
 type Coapplicative' c = CatCoapplicative' c HASK
 type Coapplicative    = CatCoapplicative HASK
 
-instance CatPure'  c cat f => CatExtract'   c (Op cat) f where extract = Op catPure
-instance CatJoin'  c cat f => CatDuplicate' c (Op cat) f where duplicate = Op join
+instance CatPure' c cat f => CatExtract'   c (Op cat) f where extract = Op catPure
+instance CatJoin' c cat f => CatDuplicate' c (Op cat) f where duplicate = Op join
 
 instance CatExtract'       Unconstrained HASK Identity where extract   = coerce
 instance CatExtend'        Unconstrained HASK Identity where (<<=)     = coerce

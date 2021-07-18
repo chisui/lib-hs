@@ -57,7 +57,9 @@ instance CatInitial (Phantom Type) where
 instance CatTerminal (Phantom Type) where
     type Terminal (Phantom Type) = Void
     terminate = Phantom
-instance CatDistributive (Phantom Type) f where distribute = Phantom
+instance CatDistributive (Phantom Type) f where
+    distribute = Phantom
+    collect _ = Phantom
 instance CatFix      (Phantom Type) where fix = Phantom
 instance CatMonoidal (Phantom Type) f where
     type Id (Phantom Type) f = ()

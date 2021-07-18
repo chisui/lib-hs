@@ -38,9 +38,6 @@ use2 f a = use (use f a)
 
 useT2 :: (forall a b. (c0 a, c1 b) => f a -> g b -> c) -> SomeT c0 f -> SomeT c1 g -> c
 useT2 f a = useT (useT f a)
-
-class    (forall x. c0 x => c1 x) => (c0 :: k -> Constraint) ==> (c1 :: k -> Constraint)
-instance (forall x. c0 x => c1 x) => (c0 :: k -> Constraint) ==> (c1 :: k -> Constraint)
  
 
 class Typeable a => Castable a

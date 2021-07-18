@@ -6,7 +6,7 @@
 module Std.Ord
     ( module Eq
     , Ord'(..), Ord, PartialOrd, compare, (<), (<=), (>), (>=)
-    , Res(..), Totallity(..), Bool(..)
+    , Res(..), Totality(..), Bool(..)
     , Ordered(..), Unordered(..)
     , Ordering(..)
     ) where
@@ -24,7 +24,7 @@ import "this" Std.Cat
 import "this" Std.Basic
 
 
-class Eq a => Ord' (t :: Totallity) a | a -> t where
+class Eq a => Ord' (t :: Totality) a | a -> t where
     compare'                 :: a -> a -> Res t Ordering
     (<?), (<=?), (>?), (>=?) :: a -> a -> Res t Bool
 
@@ -90,12 +90,12 @@ class GOrd t a | a -> t where
 instance GOrd t f => GOrd t (M1 m n f) where
     gcompare :: forall x. M1 m n f x -> M1 m n f x -> Res t Ordering
     gcompare = to coerce (gcompare :: f x -> f x -> Res t Ordering)
-instance (GOrd tf f, GOrd tg g, MinTotallity tf tg ~ t) => GOrd t (f :+: g) where
+instance (GOrd tf f, GOrd tg g, MinTotality tf tg ~ t) => GOrd t (f :+: g) where
     gcompare (L1 a) (L1 b) = joinRes (pure @(Res tg) <$> gcompare a b)
     gcompare (R1 a) (R1 b) = joinRes . pure @(Res tf) $ gcompare a b
     gcompare (L1 _) _      = pure GT
     gcompare _      _      = pure LT
-instance (GOrd tf f, GOrd tg g, MinTotallity tf tg ~ t) => GOrd t (f :*: g) where
+instance (GOrd tf f, GOrd tg g, MinTotality tf tg ~ t) => GOrd t (f :*: g) where
     gcompare (a :*: b) (a' :*: b') = zipRes (Base.<>) (gcompare a a') (gcompare b b')
 instance Ord' t a => GOrd t (K1 i a) where
     gcompare (K1 a) (K1 b) = compare' a b
@@ -111,13 +111,13 @@ deriving via (Basic Base.Char)    instance Ord' 'Total Base.Char
 deriving via (Basic Base.Integer) instance Ord' 'Total Base.Integer
 deriving via (Basic Base.Bool)    instance Ord' 'Total Base.Bool
 
-instance (MinTotallity t t ~ t, Ord' t a) => Ord' t [a] where
+instance (MinTotality t t ~ t, Ord' t a) => Ord' t [a] where
     (a : as) `compare'` (b : bs) = zipRes @t @t (Base.<>) (a `compare'` b) (as `compare'` bs)
     [] `compare'` [] = pure EQ
     [] `compare'` _  = pure LT
     _  `compare'` _  = pure GT
 
-instance (Ord' u a, Ord' v b, t ~ MinTotallity u v) => Ord' t (Base.Either a b) where
+instance (Ord' u a, Ord' v b, t ~ MinTotality u v) => Ord' t (Base.Either a b) where
     compare' (Base.Left  a) (Base.Left  b) = joinRes @u @v (pure <$> compare' a b)
     compare' (Base.Right a) (Base.Right b) = joinRes @u @v (pure  $  compare' a b)
     compare' (Base.Left  _) _ = pure GT

@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 module Std.Cat.Stream where
 
 import "base" Data.Functor.Identity
@@ -61,18 +62,18 @@ instance (CatApplicative HASK m, CatMonad HASK m) => CatMonad' Unconstrained HAS
 instance (CatApplicative HASK m, CatMonad HASK m) => CatCombine' Unconstrained HASK (StreamT m) where
     combine = fst -- just return left since the Stream is infinite
 
-instance Comonad m => CatExtract' Unconstrained HASK (StreamT m) where
+instance (Functor m, Comonad m) => CatExtract' Unconstrained HASK (StreamT m) where
     extract (Stream f s) = snd . extract . f $ s
-instance Comonad m => CatExtend' Unconstrained HASK (StreamT m) where
+instance (Functor m, Comonad m) => CatExtend' Unconstrained HASK (StreamT m) where
     (<<=) f = map f . duplicate
-instance Comonad m => CatDuplicate' Unconstrained HASK (StreamT m) where
+instance (Functor m, Comonad m) => CatDuplicate' Unconstrained HASK (StreamT m) where
     duplicate :: forall a. StreamT m a -> StreamT m (StreamT m a)
     duplicate (Stream f s) = Stream (step' f) s
       where
         step' :: forall s. (s -> m (StreamT m a, a)) -> s -> m (StreamT m (StreamT m a), StreamT m a) 
         step' g s' = flip map (g s') $ \(Stream h s'', _) -> (Stream (step' h) s'', Stream g s')
 
-instance Comonad m => CatComonad' Unconstrained HASK (StreamT m)
+instance (Functor m, Comonad m) => CatComonad' Unconstrained HASK (StreamT m)
 
 instance CatLeftFunctor' Monad Unconstrained (~>) HASK StreamT where
     left' f (Stream g s) = Stream step' s

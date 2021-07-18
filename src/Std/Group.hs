@@ -21,9 +21,9 @@ module Std.Group
     , Abelian
     , Semilattice
     , DistributiveOp
-    , Ring
+    , Ring', Ring
     , CommutativeRing
-    , Field
+    , Field', Field
     ) where
 
 import "base" Data.Proxy
@@ -102,14 +102,15 @@ class    (Magma f a, Magma g a) => DistributiveOp f g a
 
 class    (Abelian f a, Monoid g a, DistributiveOp f g a) => Ring' f g a
 instance (Abelian f a, Monoid g a, DistributiveOp f g a) => Ring' f g a
-type Ring = Ring' 'Add 'Mult
+class    (InvOp 'Add a ~ 'Sub, InvOp 'Sub a ~ 'Add, InverseOp 'Sub a, Ring' 'Add 'Mult a) => Ring a
+instance (InvOp 'Add a ~ 'Sub, InvOp 'Sub a ~ 'Add, InverseOp 'Sub a, Ring' 'Add 'Mult a) => Ring a
 
 class    (Ring' f g a, CommutativeOp g a) => CommutativeRing' f g a
 instance (Ring' f g a, CommutativeOp g a) => CommutativeRing' f g a
 type CommutativeRing = CommutativeRing' 'Add 'Mult
 
-class    (CommutativeRing' f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field' f g a
-instance (CommutativeRing' f g a, Abelian g a, Quasigroup f a, Quasigroup f a) => Field' f g a
+class    (CommutativeRing' f g a, Abelian g a, Quasigroup f a) => Field' f g a
+instance (CommutativeRing' f g a, Abelian g a, Quasigroup f a) => Field' f g a
 type Field = Field' 'Add 'Mult
 
 -- instances

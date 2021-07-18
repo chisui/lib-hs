@@ -16,18 +16,18 @@ import "this" Std.Cat
 import "this" Std.Basic
 import "this" Std.Partial
 
-type OpRes op a = DirectRes (OpTotallity op a) a
-class MapDirectRes (OpTotallity op a) => BinOp (op :: k) a where
-    type OpTotallity op a :: Totallity
-    type OpTotallity op a = 'Total
+type OpRes op a = DirectRes (OpTotality op a) a
+class MapDirectRes (OpTotality op a) => BinOp (op :: k) a where
+    type OpTotality op a :: Totality
+    type OpTotality op a = 'Total
     op :: proxy op -> a -> a -> OpRes op a
     op _ = op# (proxy# @op)
     op# :: Proxy# op -> a -> a -> OpRes op a
     op# _ = op (Proxy @op)
     {-# MINIMAL op | op# #-}
 
-class    (BinOp op a, OpTotallity op a ~ t) => BinOp' t op a | op a -> t
-instance (BinOp op a, OpTotallity op a ~ t) => BinOp' t op a
+class    (BinOp op a, OpTotality op a ~ t) => BinOp' t op a | op a -> t
+instance (BinOp op a, OpTotality op a ~ t) => BinOp' t op a
 class    BinOp' 'Partial op a => PartialBinOp op a
 instance BinOp' 'Partial op a => PartialBinOp op a
 class    (BinOp' 'Total   op a) => TotalBinOp   op a
@@ -51,8 +51,8 @@ class (BinOp op a, BinOp (InvOp op a) a) => InverseOp (op :: k) a where
     inv# _ = inv (Proxy @op)
     {-# MINIMAL inv | inv# #-}
 
-class    (InverseOp op a, OpTotallity (InvOp op a) a ~ t) => InverseOp' t op a | op a -> t
-instance (InverseOp op a, OpTotallity (InvOp op a) a ~ t) => InverseOp' t op a
+class    (InverseOp op a, OpTotality (InvOp op a) a ~ t) => InverseOp' t op a | op a -> t
+instance (InverseOp op a, OpTotality (InvOp op a) a ~ t) => InverseOp' t op a
 class    InverseOp' 'Partial op a => PartialInverseOp op a
 instance InverseOp' 'Partial op a => PartialInverseOp op a
 class    InverseOp' 'Total   op a => TotalInverseOp   op a
@@ -115,11 +115,11 @@ replicate i a = if (i == zero)
     else cons a (replicate (pred i) a)
 
 instance Base.Num a => BinOp 'Add (Numeric a) where
-    type OpTotallity 'Add (Numeric a) = 'Total
+    type OpTotality 'Add (Numeric a) = 'Total
     op# _ = to coerce ((Base.+) @a)
 
 instance Base.Num a => BinOp 'Sub (Numeric a) where
-    type OpTotallity 'Sub (Numeric a) = 'Total
+    type OpTotality 'Sub (Numeric a) = 'Total
     op# _ = to coerce ((Base.-) @a)
 
 instance Base.Num a => InverseOp 'Add (Numeric a) where
@@ -137,11 +137,11 @@ instance Base.Num a => IdentityOp 'Sub (Numeric a) where
     identity# _ = to coerce (0 :: Basic a)
 
 instance Base.Num a => BinOp 'Mult (Numeric a) where
-    type OpTotallity 'Mult (Numeric a) = 'Total
+    type OpTotality 'Mult (Numeric a) = 'Total
     op# _ = to coerce ((Base.*) @a)
 
 instance Base.Fractional a => BinOp 'Div (Numeric a) where
-    type OpTotallity 'Div (Numeric a) = 'Total
+    type OpTotality 'Div (Numeric a) = 'Total
     op# _ = to coerce ((Base./) @a)
 instance Base.Fractional a => InverseOp 'Mult (Numeric a) where
     type InvOp 'Mult (Numeric a) = 'Div
@@ -158,22 +158,22 @@ instance Base.Fractional a => IdentityOp 'Div (Numeric a) where
 
 
 instance Base.Num a => BinOp 'Add (PartialNumeric a) where
-    type OpTotallity 'Add (PartialNumeric a) = 'Partial
+    type OpTotality 'Add (PartialNumeric a) = 'Partial
     op# _ = errorToPartial2 ((Base.+) @a)
 
 instance Base.Num a => BinOp 'Sub (PartialNumeric a) where
-    type OpTotallity 'Sub (PartialNumeric a) = 'Partial
+    type OpTotality 'Sub (PartialNumeric a) = 'Partial
     op# _ = errorToPartial2 ((Base.-) @a)
 instance Base.Num a => InverseOp 'Add (PartialNumeric a) where
     type InvOp 'Add (PartialNumeric a) = 'Sub
     inv# _ = errorToPartial1 (Base.negate @a)
 
 instance Base.Num a => BinOp 'Mult (PartialNumeric a) where
-    type OpTotallity 'Mult (PartialNumeric a) = 'Partial
+    type OpTotality 'Mult (PartialNumeric a) = 'Partial
     op# _ = errorToPartial2 ((Base.*) @a)
 
 instance Base.Fractional a => BinOp 'Div (PartialNumeric a) where
-    type OpTotallity 'Div (PartialNumeric a) = 'Partial
+    type OpTotality 'Div (PartialNumeric a) = 'Partial
     op# _ = errorToPartial2 ((Base./) @a)
 instance Base.Fractional a => InverseOp 'Mult (PartialNumeric a) where
     type InvOp 'Mult (PartialNumeric a) = 'Div
@@ -181,7 +181,7 @@ instance Base.Fractional a => InverseOp 'Mult (PartialNumeric a) where
 
 
 instance Base.Semigroup a => BinOp 'Canonic (Monoidal a) where
-    type OpTotallity 'Canonic (Monoidal a) = 'Total
+    type OpTotality 'Canonic (Monoidal a) = 'Total
     op# _ = to coerce ((Base.<>) :: a -> a -> a)
 
 instance Base.Monoid a => IdentityOp 'Canonic (Monoidal a) where
@@ -194,19 +194,19 @@ instance (TotalBinOp 'Canonic a, IdentityOp 'Canonic a) => Base.Monoid (Monoidal
     mempty = to coerce (mempty :: a)
 
 
-opCoerced# :: forall a op b. (Coercible a b, BinOp op a) => Proxy# a -> Proxy# op -> b -> b -> DirectRes (OpTotallity op a) b
-opCoerced# _ p a b = mapDirectRes (Proxy @(OpTotallity op a))
+opCoerced# :: forall a op b. (Coercible a b, BinOp op a) => Proxy# a -> Proxy# op -> b -> b -> DirectRes (OpTotality op a) b
+opCoerced# _ p a b = mapDirectRes (Proxy @(OpTotality op a))
     (from coerce :: a -> b)
     (op# p (to coerce a :: a) (to coerce b :: a))
 
-invCoerced# :: forall a op b. (Coercible a b, InverseOp op a) => Proxy# a -> Proxy# op -> b -> DirectRes (OpTotallity (InvOp op a) a) b
-invCoerced# _ p a = mapDirectRes (Proxy @(OpTotallity (InvOp op a) a))
+invCoerced# :: forall a op b. (Coercible a b, InverseOp op a) => Proxy# a -> Proxy# op -> b -> DirectRes (OpTotality (InvOp op a) a) b
+invCoerced# _ p a = mapDirectRes (Proxy @(OpTotality (InvOp op a) a))
     (from coerce :: a -> b)
     (inv# p (to coerce a :: a))
 
 
 instance PartialBinOp op a => BinOp (op :: BasicOp) (Res 'Partial a) where
-    type OpTotallity op (Res 'Partial a) = 'Total
+    type OpTotality op (Res 'Partial a) = 'Total
     op# p (FullRes a) (FullRes b) = op# p a b
     op# _ EmptyRes _ = EmptyRes
     op# _ _ EmptyRes = EmptyRes
@@ -214,7 +214,7 @@ instance PartialBinOp op a => BinOp (op :: BasicOp) (Res 'Partial a) where
 newtype Integrally a = Integrally a
 deriving via (Numeric a) instance Base.Num a => BinOp 'Mult (Integrally a)
 instance (FromInteger a, Base.Integral a) => BinOp 'Div (Integrally a) where
-    type OpTotallity 'Div (Integrally a) = 'Partial
+    type OpTotality 'Div (Integrally a) = 'Partial
     op# _ = to coerce div :: Integrally a -> Integrally a -> PartialRes (Integrally a)
       where
         div :: a -> a -> PartialRes a

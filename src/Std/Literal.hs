@@ -48,7 +48,7 @@ class HasItems l where
 class HasItems l => FromList l where
     fromList :: [Item l] -> l
 
-class (MapDirectRes t, HasItems l) => ToList (t :: Totallity) l | l -> t where
+class (MapDirectRes t, HasItems l) => ToList (t :: Totality) l | l -> t where
     toList :: l -> DirectRes t [Item l]
 
 class (FromList t, ToList 'Total t) => IsList t

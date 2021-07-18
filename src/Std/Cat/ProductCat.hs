@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Std.Cat.ProductCat where
 

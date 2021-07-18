@@ -6,8 +6,11 @@ import "base" GHC.Generics ( Generic )
 import "this" Std.Type
 import "this" Std.Cat.Class
 import "this" Std.Cat.Functor
+import "this" Std.Cat.Closed
 import "this" Std.Cat.Applicative
 import "this" Std.Cat.Bifunctor
+import "this" Std.Cat.Distributive
+import "this" Std.Cat.Representable
 import "this" Std.Cat.NaturalTransformation
 import "this" Std.Cat.Iso
 
@@ -41,6 +44,24 @@ instance (Applicative f, Applicative g) => CatLift2' Unconstrained HASK (f . g) 
 instance (Applicative f, Applicative g) => CatApplicative' Unconstrained HASK (f . g)
 
 
+instance (Distributive f, Distributive g) => CatDistributive HASK (f . g) where
+    distribute = Compose . map distribute . collect runCompose
+    collect  f = Compose . map distribute . collect (to coerce f)
+
+instance (Representable f, Representable g) => CatRepresentable HASK HASK (f . g) where
+    type CatRep HASK HASK (f . g) = (CatRep HASK HASK f, CatRep HASK HASK g)
+    catRep = tabulate :<-> index
+      where
+        index (Compose fg) (i,j) = from catRep (from catRep fg i) j
+        tabulate = Compose . to catRep . map (to catRep) . curry
+
 instance CatLeftFunctor'  Functor Functor (~>) (~>) (.) where left'  f = NT (liftCompose         (eta f))
 instance CatRightFunctor' Functor Functor (~>) (~>) (.) where right' f = NT (liftCompose (catMap (eta f)))
 instance CatBifunctor'    Functor Functor (~>) (~>) (~>) (.)
+
+
+
+
+class    CatComposition cat  o   where comp :: Iso cat ((f `o` g) x) (f (g x))
+instance CatComposition HASK (.) where comp = coerce
+type Composition = CatComposition HASK

@@ -172,7 +172,7 @@ instance (Eq (Union (a ': as)), Eq b) => Eq (Union (b ': a ': as)) where
 
 instance (Ord' t a) => Ord' t (Union '[a]) where
     a `compare'` b = decomposeLast a `compare'` decomposeLast b
-instance (Ord' u (Union (a ': as)), Ord' v b, t ~ MinTotallity u v) => Ord' t (Union (b ': a ': as)) where
+instance (Ord' u (Union (a ': as)), Ord' v b, t ~ MinTotality u v) => Ord' t (Union (b ': a ': as)) where
     a `compare'` b = decompose a `compare'` decompose b
 
 

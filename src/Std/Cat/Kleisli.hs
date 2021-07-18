@@ -65,7 +65,7 @@ instance ( CatMonad cat m
     rght       = arr @cat rght
     codiagonal = arr @cat codiagonal
 
-instance Distributive m => Closed (Kleisli m) where
+instance (Monad m, Distributive m) => Closed (Kleisli m) where
     type Exp (Kleisli m) = Kleisli m
     apply   = Kleisli (uncurry unKleisli)
     curry   = liftKleisli $ \f -> catPure . Kleisli . curry f
@@ -78,11 +78,11 @@ instance Monad m => CatInitial (Kleisli m) where
     type Initial (Kleisli m) = Initial HASK
     initiate = Kleisli absurd
 
-instance (Associative f, LeftFunctor' c0 c1 f, Distributive m) => CatLeftFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
+instance (Associative f, LeftFunctor' c0 c1 f, Monad m, Distributive m) => CatLeftFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
     left' = liftKleisli $ \f -> map unLeft . distribute . map f . MkLeft
-instance (Associative f, Distributive m, RightFunctor' c0 c1 f) => CatRightFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
+instance (Associative f, Monad m, Distributive m, RightFunctor' c0 c1 f) => CatRightFunctor' c0 c1 (Kleisli m) (Kleisli m) f where
     right' = liftKleisli $ \f -> map unRight . distribute . map f . MkRight
-instance (Associative f, Distributive m, Bifunctor' c0 c1 f) => CatBifunctor' c0 c1 (Kleisli m) (Kleisli m) (Kleisli m) f
+instance (Associative f, Monad m, Distributive m, Bifunctor' c0 c1 f) => CatBifunctor' c0 c1 (Kleisli m) (Kleisli m) (Kleisli m) f
 
 
 instance CatMonad cat m => CatLeftFunctor' Unconstrained Unconstrained (Op cat) HASK (CatKleisli cat m) where

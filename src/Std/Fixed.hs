@@ -36,10 +36,10 @@ deriving newtype instance Ord' t a => Ord' t (Fixed n a)
 deriving via Identity instance CatFunctor' Unconstrained HASK HASK (Fixed n)
 
 instance BinOp 'Add a => BinOp 'Add (Fixed n a) where
-    type OpTotallity 'Add (Fixed n a) = OpTotallity 'Add a
+    type OpTotality 'Add (Fixed n a) = OpTotality 'Add a
     op# = opCoerced# (proxy# @a)
 instance BinOp 'Sub a => BinOp 'Sub (Fixed n a) where
-    type OpTotallity 'Sub (Fixed n a) = OpTotallity 'Sub a
+    type OpTotality 'Sub (Fixed n a) = OpTotality 'Sub a
     op# = opCoerced# (proxy# @a)
 instance (InvOp 'Add a ~ 'Sub, InverseOp 'Add a) => InverseOp 'Add (Fixed n a) where
     type InvOp 'Add (Fixed n a) = 'Sub

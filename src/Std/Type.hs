@@ -13,7 +13,7 @@ module Std.Type
     , type (!)
     , AllImplement, type (<$>)
     , type (==)(..)
-    , type (===)
+    , type (===), type (==>)
     , Concat
     , Length
     , MinT, MaxT
@@ -80,11 +80,16 @@ type family AllImplement (l :: [k]) (c :: k -> Constraint) :: Constraint where
     AllImplement (a ': as) c = (c a, AllImplement as c)
 
 
+class    (forall x. c0 x => c1 x) => (c0 :: k -> Constraint) ==> (c1 :: k -> Constraint)
+instance (forall x. c0 x => c1 x) => (c0 :: k -> Constraint) ==> (c1 :: k -> Constraint)
+
+
 infix 4 ===
 type family (===) (a :: k0) (b :: k1) :: Bool where
     (f a) === (g b) = (f === g) && (a === b)
     a === a = 'True
     _ === _ = 'False
+
 
 class (==) a b where eq :: a :~: b
 instance (a ~ b) => (==) a b where eq = Refl

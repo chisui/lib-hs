@@ -11,7 +11,7 @@ import "this" Std.Cat.Foldable
 
 
 instance CatFunctor' Ord HASK HASK Set where
-    catMap f = Set.mapMonotonic getOrdered  . Set.map (Ordered . f)
+    catMap f = Set.mapMonotonic getOrdered . Set.map (Ordered . f)
 
 instance Foldable' Ord Set where
     foldr    = Set.foldr
